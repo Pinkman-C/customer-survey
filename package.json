@@ -1,0 +1,9 @@
+{
+  "name": "auctelia-survey-platform",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Enquêtes de satisfaction vendeurs & acheteurs Auctelia — Clictelia SA",
+  "engines": {
+    "node": ">=18"
+  }
+}

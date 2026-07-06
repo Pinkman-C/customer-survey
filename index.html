@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Auctelia — Enquête de satisfaction</title>
+<link rel="stylesheet" href="styles/main.css">
+</head>
+<body>
+<div class="au-page" style="align-items:center;justify-content:center;">
+  <main class="au-thanks">
+    <h1>Auctelia</h1>
+    <p id="fallback-text">Redirection en cours…</p>
+  </main>
+</div>
+<script>
+(function () {
+  "use strict";
+  var params = new URLSearchParams(window.location.search);
+  var type = (params.get("type") || "").toLowerCase();
+  var target = null;
+
+  if (type === "vendeurs" || type === "vendeur" || type === "seller" || type === "sellers") {
+    target = "vendeurs.html";
+  } else if (type === "acheteurs" || type === "acheteur" || type === "buyer" || type === "buyers") {
+    target = "acheteurs.html";
+  }
+
+  if (target) {
+    // Preserve all other query params (lang, utm_source, etc.)
+    params.delete("type");
+    var qs = params.toString();
+    window.location.replace(target + (qs ? "?" + qs : ""));
+  } else {
+    document.getElementById("fallback-text").textContent =
+      "Lien invalide. Merci d'utiliser le lien fourni dans l'email reçu / Ongeldige link. Gebruik de link uit de ontvangen e-mail.";
+  }
+})();
+</script>
+</body>
+</html>

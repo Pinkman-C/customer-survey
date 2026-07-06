@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Auctelia — Résultats enquêtes satisfaction</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+<link rel="stylesheet" href="styles/main.css">
+</head>
+<body>
+
+<!-- Password gate -->
+<div class="dash-gate" id="gate">
+  <div class="dash-gate-card">
+    <div class="au-logo"><span>Auctelia</span><span class="dot">.</span></div>
+    <h1>Résultats enquêtes satisfaction</h1>
+    <form id="gate-form">
+      <input type="password" id="gate-password" placeholder="Mot de passe" autocomplete="current-password" required>
+      <div class="au-error-text" id="gate-error" style="display:none;">Mot de passe incorrect.</div>
+      <button type="submit" class="au-btn au-btn-gold">Accéder au dashboard</button>
+    </form>
+  </div>
+</div>
+
+<!-- Dashboard shell -->
+<div class="dash-shell" id="dash-shell" style="display:none;">
+
+  <aside class="dash-sidebar">
+    <div class="au-logo"><span>Auctelia</span><span class="dot">.</span></div>
+
+    <div class="dash-type-switch" role="group" aria-label="Type d'enquête">
+      <button type="button" data-type="vendeurs" class="active">Vendeurs</button>
+      <button type="button" data-type="acheteurs">Acheteurs</button>
+    </div>
+
+    <nav class="dash-nav">
+      <a href="#section-kpi">Vue d'ensemble</a>
+      <a href="#section-nps">Distribution NPS</a>
+      <a href="#section-segments">Segments</a>
+      <a href="#section-csat">Satisfaction détaillée</a>
+      <a href="#section-choices">Freins &amp; concurrence</a>
+      <a href="#section-verbatims">Verbatims</a>
+      <a href="#section-raw">Données brutes</a>
+    </nav>
+
+    <div class="dash-sidebar-footer">
+      <button type="button" id="export-csv-btn">Exporter en CSV</button>
+      <button type="button" id="logout-btn">Se déconnecter</button>
+    </div>
+  </aside>
+
+  <main class="dash-main">
+    <div class="dash-header-row">
+      <div>
+        <h1 style="font-size:1.5rem;">Résultats — <span id="header-type-label">Vendeurs</span></h1>
+        <div class="dash-meta" id="header-meta">Chargement des données…</div>
+      </div>
+    </div>
+
+    <div class="dash-mock-banner" id="mock-banner" style="display:none;">
+      Données de démonstration — connectez une feuille Google Sheets publiée en CSV pour afficher les vraies réponses (voir README).
+    </div>
+
+    <!-- Bloc 1 — KPI -->
+    <section class="dash-section" id="section-kpi">
+      <h2 class="dash-section-title">Scores clés</h2>
+      <div class="dash-kpi-grid" id="kpi-grid">
+        <div class="dash-kpi-card dash-skel-kpi au-skeleton"></div>
+        <div class="dash-kpi-card dash-skel-kpi au-skeleton"></div>
+        <div class="dash-kpi-card dash-skel-kpi au-skeleton"></div>
+      </div>
+    </section>
+
+    <!-- Bloc 2 — NPS distribution -->
+    <section class="dash-section" id="section-nps">
+      <h2 class="dash-section-title">Distribution des notes NPS</h2>
+      <div class="dash-card">
+        <div class="dash-chart-wrap" style="height:280px;">
+          <canvas id="chart-nps-dist"></canvas>
+        </div>
+      </div>
+    </section>
+
+    <!-- Bloc 3 — Segments -->
+    <section class="dash-section" id="section-segments">
+      <h2 class="dash-section-title">Répartition par segment</h2>
+      <div class="dash-card">
+        <div class="dash-chart-wrap" style="height:280px; max-width:420px; margin:0 auto;">
+          <canvas id="chart-segments"></canvas>
+        </div>
+      </div>
+    </section>
+
+    <!-- Bloc 4 — CSAT detail -->
+    <section class="dash-section" id="section-csat">
+      <h2 class="dash-section-title">Questions de satisfaction détaillées</h2>
+      <div class="dash-two-col" id="csat-charts-grid"></div>
+    </section>
+
+    <!-- Bloc 5 — multi-choice -->
+    <section class="dash-section" id="section-choices">
+      <h2 class="dash-section-title" id="choices-title">Freins &amp; concurrence</h2>
+      <div class="dash-card">
+        <div class="dash-chart-wrap" id="choices-chart-wrap" style="height:320px;">
+          <canvas id="chart-choices"></canvas>
+        </div>
+      </div>
+    </section>
+
+    <!-- Bloc 6 — verbatims -->
+    <section class="dash-section" id="section-verbatims">
+      <h2 class="dash-section-title">Derniers verbatims</h2>
+      <div class="dash-verbatim-list" id="verbatim-list"></div>
+    </section>
+
+    <!-- Bloc 7 — raw data -->
+    <section class="dash-section" id="section-raw">
+      <h2 class="dash-section-title">Données brutes</h2>
+      <div class="dash-card">
+        <div class="dash-table-wrap">
+          <table class="dash-table" id="raw-table">
+            <thead><tr id="raw-table-head"></tr></thead>
+            <tbody id="raw-table-body"></tbody>
+          </table>
+        </div>
+        <div class="dash-pagination">
+          <button type="button" id="page-prev">← Précédent</button>
+          <span id="page-label">Page 1</span>
+          <button type="button" id="page-next">Suivant →</button>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<script src="assets/dashboard.js"></script>
+</body>
+</html>

@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Auctelia — Merci</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+<link rel="stylesheet" href="styles/main.css">
+</head>
+<body>
+<div class="au-page">
+  <div class="au-topbar">
+    <a class="au-logo" href="#"><span>Auctelia</span><span class="dot">.</span></a>
+  </div>
+
+  <main class="au-thanks">
+    <svg class="au-check-circle" viewBox="0 0 80 80">
+      <circle cx="40" cy="40" r="35"></circle>
+      <path d="M25 41l10 10 20-22"></path>
+    </svg>
+    <h1 id="thanks-title">Merci pour votre réponse !</h1>
+    <p id="thanks-text">Votre avis nous aide directement à améliorer Auctelia. Nous lisons chaque réponse avec attention.</p>
+  </main>
+
+  <div class="au-footer">Clictelia SA · Auctelia</div>
+</div>
+
+<script>
+(function () {
+  "use strict";
+  var params = new URLSearchParams(window.location.search);
+  var lang = params.get("lang") === "nl" ? "nl" : "fr";
+  document.documentElement.lang = lang;
+
+  var TEXT = {
+    fr: {
+      title: "Merci pour votre réponse !",
+      text: "Votre avis nous aide directement à améliorer Auctelia. Nous lisons chaque réponse avec attention."
+    },
+    nl: {
+      title: "Bedankt voor uw antwoord!",
+      text: "Uw mening helpt ons rechtstreeks om Auctelia te verbeteren. We lezen elk antwoord aandachtig."
+    }
+  };
+
+  document.getElementById("thanks-title").textContent = TEXT[lang].title;
+  document.getElementById("thanks-text").textContent = TEXT[lang].text;
+  document.title = lang === "nl" ? "Auctelia — Bedankt" : "Auctelia — Merci";
+})();
+</script>
+</body>
+</html>
