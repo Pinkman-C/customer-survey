@@ -7,10 +7,17 @@
 <link rel="stylesheet" href="styles/main.css">
 </head>
 <body>
-<div class="au-page" style="align-items:center;justify-content:center;">
-  <main class="au-thanks">
-    <h1>Auctelia</h1>
-    <p id="fallback-text">Redirection en cours…</p>
+<div class="au-page">
+  <div class="au-topbar">
+    <a class="au-logo" href="#"><span>Auctelia</span><span class="dot">.</span></a>
+  </div>
+  <main class="au-thanks" id="fallback-view" style="display:none;">
+    <h1>Enquêtes de satisfaction Auctelia</h1>
+    <p style="margin-bottom:28px;">Choisissez l'enquête qui vous concerne, ou utilisez le lien reçu par email pour accéder directement à la bonne langue.</p>
+    <div style="display:flex; gap:12px; flex-wrap:wrap; justify-content:center;">
+      <a class="au-btn au-btn-primary" style="margin-left:0; text-decoration:none; display:inline-flex; align-items:center;" href="vendeurs.html">Enquête vendeurs</a>
+      <a class="au-btn au-btn-gold" style="text-decoration:none; display:inline-flex; align-items:center;" href="acheteurs.html">Enquête acheteurs</a>
+    </div>
   </main>
 </div>
 <script>
@@ -32,8 +39,7 @@
     var qs = params.toString();
     window.location.replace(target + (qs ? "?" + qs : ""));
   } else {
-    document.getElementById("fallback-text").textContent =
-      "Lien invalide. Merci d'utiliser le lien fourni dans l'email reçu / Ongeldige link. Gebruik de link uit de ontvangen e-mail.";
+    document.getElementById("fallback-view").style.display = "flex";
   }
 })();
 </script>
