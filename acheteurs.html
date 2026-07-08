@@ -95,6 +95,8 @@
           title: "Qu'est-ce qui vous retient d'enchérir plus souvent ou sur davantage de lots ?",
           type: "checkbox",
           optional: true,
+          shuffle: true,
+          anchors: ["rien_satisfait", "autre"],
           options: [
             { value: "prix_reserve_eleve", label: "Prix de réserve trop élevés" },
             { value: "peu_de_lots", label: "Trop peu de lots dans ma catégorie" },
@@ -102,6 +104,8 @@
             { value: "logistique_compliquee", label: "Logistique d'enlèvement compliquée" },
             { value: "concurrence_forte", label: "Concurrence trop forte" },
             { value: "frais_adjudication", label: "Frais d'adjudication" },
+            { value: "annulation_post_adjudication", label: "J'ai déjà vécu l'annulation d'un achat après avoir remporté une enchère" },
+            { value: "prix_final_superieur_neuf", label: "Prix final plus élevé qu'un équivalent neuf" },
             { value: "rien_satisfait", label: "Rien, je suis satisfait" },
             { value: "autre", label: "Autre" }
           ]
@@ -178,6 +182,8 @@
           title: "Wat weerhoudt u ervan vaker of op meer loten te bieden?",
           type: "checkbox",
           optional: true,
+          shuffle: true,
+          anchors: ["rien_satisfait", "autre"],
           options: [
             { value: "prix_reserve_eleve", label: "Reserveprijzen te hoog" },
             { value: "peu_de_lots", label: "Te weinig loten in mijn categorie" },
@@ -185,6 +191,8 @@
             { value: "logistique_compliquee", label: "Ophaallogistiek te ingewikkeld" },
             { value: "concurrence_forte", label: "Te sterke concurrentie" },
             { value: "frais_adjudication", label: "Toewijzingskosten" },
+            { value: "annulation_post_adjudication", label: "Ik heb al een aankoop zien annuleren nadat ik een veiling had gewonnen" },
+            { value: "prix_final_superieur_neuf", label: "Eindprijs hoger dan een gelijkwaardig nieuw toestel" },
             { value: "rien_satisfait", label: "Niets, ik ben tevreden" },
             { value: "autre", label: "Andere" }
           ]

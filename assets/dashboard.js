@@ -37,6 +37,7 @@
       prix_reserve_eleve: "Prix de réserve trop élevés", peu_de_lots: "Trop peu de lots dans ma catégorie",
       manque_confiance_descriptions: "Manque de confiance dans les descriptions", logistique_compliquee: "Logistique d'enlèvement compliquée",
       concurrence_forte: "Concurrence trop forte", frais_adjudication: "Frais d'adjudication",
+      annulation_post_adjudication: "Annulation d'achat après adjudication", prix_final_superieur_neuf: "Prix final > équivalent neuf",
       rien_satisfait: "Rien, je suis satisfait", autre: "Autre"
     }
   };
@@ -360,6 +361,7 @@
     safeRender(renderSegments, rows, type);
     safeRender(renderCsatCharts, rows, type);
     safeRender(renderChoicesChart, rows, type);
+    renderChoicesNpsCorrelation(rows, type);
     renderVerbatims(rows, type);
     state.page = 1;
     renderRawTable(rows, type);
@@ -600,6 +602,56 @@
         scales: { x: { beginAtZero: true, ticks: { precision: 0 }, grid: { display: false } }, y: { grid: { display: false } } }
       }
     });
+  }
+
+  // Objectifies how much each checked irritant actually correlates with
+  // loyalty, computed after the fact from independent answers (NPS vs.
+  // checkbox) rather than asked directly — avoids leading respondents
+  // toward a causal link the questions never suggested.
+  function renderChoicesNpsCorrelation(rows, type) {
+    var wrap = document.getElementById("choices-correlation");
+    if (!wrap) return;
+
+    var field = type === "vendeurs" ? "concurrence" : "freins";
+    var labelsMap = CHOICE_LABELS[type];
+    var overallAvg = average(rows, "nps");
+
+    var byChoice = {};
+    Object.keys(labelsMap).forEach(function (k) { byChoice[k] = []; });
+
+    rows.forEach(function (r) {
+      var raw = r[field] || "";
+      raw.split(",").map(function (s) { return s.trim(); }).filter(Boolean).forEach(function (v) {
+        if (!byChoice[v]) byChoice[v] = [];
+        byChoice[v].push(r.nps);
+      });
+    });
+
+    var entries = Object.keys(byChoice)
+      .filter(function (k) { return byChoice[k].length >= 5; })
+      .map(function (k) {
+        var vals = byChoice[k];
+        var avg = vals.reduce(function (a, b) { return a + b; }, 0) / vals.length;
+        return { label: labelsMap[k] || k, count: vals.length, avg: avg, delta: avg - overallAvg };
+      });
+
+    entries.sort(function (a, b) { return a.delta - b.delta; });
+
+    if (!entries.length) {
+      wrap.innerHTML = '<p style="color:var(--au-ink3); font-size:0.85rem;">Pas encore assez de réponses par item pour calculer une corrélation fiable (minimum 5 par item).</p>';
+      return;
+    }
+
+    wrap.innerHTML =
+      '<div style="font-size:0.8rem; color:var(--au-ink3); margin-bottom:10px;">NPS moyen des répondants ayant coché chaque item, comparé au NPS moyen global (' + overallAvg.toFixed(1) + ') — calculé après coup, pas suggéré par la question.</div>' +
+      entries.map(function (e) {
+        var color = e.delta <= -10 ? RED : (e.delta >= 10 ? GREEN : INK3);
+        var sign = e.delta > 0 ? "+" : "";
+        return '<div style="display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-bottom:1px solid var(--au-line); font-size:0.86rem;">' +
+          '<span>' + escapeHtml(e.label) + ' <span style="color:var(--au-ink3);">(' + e.count + ')</span></span>' +
+          '<span style="font-weight:700; color:' + color + ';">' + e.avg.toFixed(1) + ' <span style="font-weight:500; font-size:0.78rem;">(' + sign + e.delta.toFixed(1) + ')</span></span>' +
+          '</div>';
+      }).join("");
   }
 
   /* ------------------------------------------------------------------

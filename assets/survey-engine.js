@@ -12,6 +12,34 @@
   var CHECK_SVG_TEMPLATE = null;
 
   /* ------------------------------------------------------------------
+     Checkbox option order — randomized per respondent to avoid primacy
+     bias, computed once per field and cached so it doesn't reshuffle
+     mid-answer. Anchor values (e.g. "Autre", "Rien, satisfait") always
+     stay pinned at the end, in the order declared.
+  ------------------------------------------------------------------ */
+  var shuffleCache = {};
+
+  function getDisplayOptions(q, field) {
+    if (!q.shuffle) return q.options;
+    if (shuffleCache[field]) return shuffleCache[field];
+
+    var anchors = q.anchors || [];
+    var nonAnchor = q.options.filter(function (o) { return anchors.indexOf(o.value) === -1; });
+    var anchorOpts = anchors
+      .map(function (v) { return q.options.filter(function (o) { return o.value === v; })[0]; })
+      .filter(Boolean);
+
+    for (var i = nonAnchor.length - 1; i > 0; i--) {
+      var j = Math.floor(Math.random() * (i + 1));
+      var tmp = nonAnchor[i]; nonAnchor[i] = nonAnchor[j]; nonAnchor[j] = tmp;
+    }
+
+    var result = nonAnchor.concat(anchorOpts);
+    shuffleCache[field] = result;
+    return result;
+  }
+
+  /* ------------------------------------------------------------------
      Language detection & persistence
   ------------------------------------------------------------------ */
   function getUrlParam(name) {
@@ -220,7 +248,7 @@
   function renderCheckbox(q, field) {
     var container = el("div");
     if (!Array.isArray(state.answers[field])) state.answers[field] = [];
-    q.options.forEach(function (opt) {
+    getDisplayOptions(q, field).forEach(function (opt) {
       var checked = state.answers[field].indexOf(opt.value) !== -1;
       var label = el("label", "au-check-option" + (checked ? " selected" : ""));
       var input = document.createElement("input");
