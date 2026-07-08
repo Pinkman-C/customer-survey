@@ -24,8 +24,8 @@
   };
 
   var SEGMENT_LABELS = {
-    vendeurs: { actif: "Plusieurs ventes", passe: "Dernière vente >1 an", occasionnel: "Une seule vente" },
-    acheteurs: { regulier: "3+ achats (12 mois)", occasionnel: "1-2 achats", non_acheteur: "Inscrit, aucun achat" }
+    vendeurs: { actif: "Plusieurs ventes, dont récente", passe: "Dernière vente >1 an", occasionnel: "Une vente récente" },
+    acheteurs: { regulier: "3+ achats", occasionnel: "1-2 achats", non_acheteur: "Inscrit, aucun achat" }
   };
 
   var CHOICE_LABELS = {
@@ -37,6 +37,7 @@
       prix_reserve_eleve: "Prix de réserve trop élevés", peu_de_lots: "Trop peu de lots dans ma catégorie",
       logistique_compliquee: "Logistique d'enlèvement compliquée", concurrence_forte: "Concurrence trop forte",
       frais_adjudication: "Frais d'adjudication", annulation_post_adjudication: "Risque d'annulation après adjudication",
+      prix_final_superieur_neuf: "Prix final > équivalent neuf",
       rien_satisfait: "Rien, je suis satisfait", autre: "Autre"
     }
   };
