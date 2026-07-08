@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Auctelia — Enquête acheteurs</title>
+<meta name="description" content="Enquête de satisfaction acheteurs Auctelia — 2 minutes, votre avis compte.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+<link rel="stylesheet" href="styles/main.css">
+</head>
+<body>
+<div class="au-page">
+
+  <div class="au-topbar">
+    <a class="au-logo" href="#"><span>Auctelia</span><span class="dot">.</span></a>
+    <div class="au-lang-switch" role="group" aria-label="Langue / Taal">
+      <button type="button" data-lang="fr" class="active">FR</button>
+      <button type="button" data-lang="nl">NL</button>
+    </div>
+  </div>
+
+  <div class="au-progress-wrap">
+    <div class="au-progress-label"><span id="progress-text">1 / 8</span></div>
+    <div class="au-progress-track"><div class="au-progress-fill" id="progress-fill" style="width:12.5%"></div></div>
+  </div>
+
+  <main class="au-form-main">
+    <div class="au-container">
+      <form id="survey-form" novalidate>
+        <div class="au-stepper" id="stepper"></div>
+      </form>
+    </div>
+  </main>
+
+  <div class="au-footer">Clictelia SA · Auctelia — <span id="footer-privacy">Vos réponses restent confidentielles</span></div>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  var I18N = {
+    fr: {
+      footerPrivacy: "Vos réponses restent confidentielles",
+      optional: "(optionnel)",
+      next: "Suivant",
+      back: "Retour",
+      submit: "Envoyer",
+      submitting: "Envoi en cours…",
+      npsLow: "0 = Pas du tout probable",
+      npsHigh: "10 = Extrêmement probable",
+      charLimit: "caractères",
+      errorRequired: "Merci de répondre pour continuer.",
+      q: [
+        {
+          eyebrow: "Pour commencer",
+          title: "Quelle situation vous correspond ?",
+          type: "radio",
+          options: [
+            { value: "regulier", title: "3 achats ou plus" },
+            { value: "occasionnel", title: "1 à 2 achats" },
+            { value: "non_acheteur", title: "Inscrit, aucun achat" }
+          ]
+        },
+        {
+          eyebrow: "Recommandation",
+          title: "Sur une échelle de 0 à 10, quelle est la probabilité que vous recommandiez Auctelia à un proche à la recherche de matériel d'occasion ?",
+          type: "nps"
+        },
+        {
+          eyebrow: "Confiance",
+          title: "Quel est votre niveau de confiance dans Auctelia pour des transactions sécurisées ?",
+          type: "stars",
+          lowLabel: "Pas confiance",
+          highLabel: "Totalement confiance"
+        },
+        {
+          eyebrow: "Qualité des annonces",
+          title: "Dans quelle mesure les descriptions des lots correspondent-elles au matériel reçu ?",
+          type: "stars",
+          lowLabel: "Jamais",
+          highLabel: "Toujours",
+          skipIf: function (a) { return a.segment === "non_acheteur"; }
+        },
+        {
+          eyebrow: "Enlèvement",
+          title: "Récupérer un lot après adjudication a été…",
+          type: "ces",
+          lowLabel: "Très compliqué",
+          highLabel: "Très fluide",
+          skipIf: function (a) { return a.segment === "non_acheteur"; }
+        },
+        {
+          eyebrow: "Freins",
+          title: "Qu'est-ce qui vous retient d'enchérir plus souvent ou sur davantage de lots ?",
+          type: "checkbox",
+          shuffle: true,
+          anchors: ["rien_satisfait", "autre"],
+          options: [
+            { value: "prix_reserve_eleve", label: "Prix de réserve trop élevés" },
+            { value: "peu_de_lots", label: "Trop peu de lots dans ma catégorie" },
+            { value: "logistique_compliquee", label: "Logistique d'enlèvement compliquée" },
+            { value: "concurrence_forte", label: "Concurrence trop forte" },
+            { value: "frais_adjudication", label: "Frais d'adjudication" },
+            { value: "annulation_post_adjudication", label: "Le risque d'annulation après adjudication" },
+            { value: "prix_final_superieur_neuf", label: "Prix final plus élevé qu'un équivalent neuf" },
+            { value: "rien_satisfait", label: "Rien, je suis satisfait" },
+            { value: "autre", label: "Autre" }
+          ]
+        },
+        {
+          eyebrow: "Usage",
+          title: "Sur quel appareil enchérissez-vous principalement ?",
+          type: "radio",
+          options: [
+            { value: "ordinateur", title: "Ordinateur" },
+            { value: "smartphone", title: "Smartphone" },
+            { value: "les_deux", title: "Plusieurs appareils" }
+          ]
+        },
+        {
+          eyebrow: "Votre mot",
+          title: "Qu'est-ce qu'Auctelia pourrait améliorer pour que vous enchérissiez davantage ?",
+          type: "textarea",
+          optional: true,
+          placeholder: "Par exemple : plus de lots dans ma région, des photos plus détaillées, un enlèvement plus simple…"
+        }
+      ]
+    },
+    nl: {
+      footerPrivacy: "Uw antwoorden blijven vertrouwelijk",
+      optional: "(optioneel)",
+      next: "Volgende",
+      back: "Terug",
+      submit: "Verzenden",
+      submitting: "Bezig met verzenden…",
+      npsLow: "0 = Helemaal niet waarschijnlijk",
+      npsHigh: "10 = Uiterst waarschijnlijk",
+      charLimit: "tekens",
+      errorRequired: "Gelieve te antwoorden om verder te gaan.",
+      q: [
+        {
+          eyebrow: "Om te beginnen",
+          title: "Welke situatie past bij u?",
+          type: "radio",
+          options: [
+            { value: "regulier", title: "3 of meer aankopen" },
+            { value: "occasionnel", title: "1 tot 2 aankopen" },
+            { value: "non_acheteur", title: "Ingeschreven, geen aankoop" }
+          ]
+        },
+        {
+          eyebrow: "Aanbeveling",
+          title: "Op een schaal van 0 tot 10, hoe waarschijnlijk is het dat u Auctelia zou aanbevelen aan een kennis die op zoek is naar tweedehands materiaal?",
+          type: "nps"
+        },
+        {
+          eyebrow: "Vertrouwen",
+          title: "In welke mate heeft u vertrouwen in Auctelia voor veilige transacties?",
+          type: "stars",
+          lowLabel: "Geen vertrouwen",
+          highLabel: "Volledig vertrouwen"
+        },
+        {
+          eyebrow: "Kwaliteit van de advertenties",
+          title: "In welke mate komen de beschrijvingen van de loten overeen met het ontvangen materiaal?",
+          type: "stars",
+          lowLabel: "Nooit",
+          highLabel: "Altijd",
+          skipIf: function (a) { return a.segment === "non_acheteur"; }
+        },
+        {
+          eyebrow: "Ophaling",
+          title: "Een lot ophalen na toewijzing was…",
+          type: "ces",
+          lowLabel: "Zeer omslachtig",
+          highLabel: "Zeer vlot",
+          skipIf: function (a) { return a.segment === "non_acheteur"; }
+        },
+        {
+          eyebrow: "Drempels",
+          title: "Wat weerhoudt u ervan vaker of op meer loten te bieden?",
+          type: "checkbox",
+          shuffle: true,
+          anchors: ["rien_satisfait", "autre"],
+          options: [
+            { value: "prix_reserve_eleve", label: "Reserveprijzen te hoog" },
+            { value: "peu_de_lots", label: "Te weinig loten in mijn categorie" },
+            { value: "logistique_compliquee", label: "Ophaallogistiek te ingewikkeld" },
+            { value: "concurrence_forte", label: "Te sterke concurrentie" },
+            { value: "frais_adjudication", label: "Toewijzingskosten" },
+            { value: "annulation_post_adjudication", label: "Het risico op annulering na toewijzing" },
+            { value: "prix_final_superieur_neuf", label: "Eindprijs hoger dan een gelijkwaardig nieuw toestel" },
+            { value: "rien_satisfait", label: "Niets, ik ben tevreden" },
+            { value: "autre", label: "Andere" }
+          ]
+        },
+        {
+          eyebrow: "Gebruik",
+          title: "Op welk apparaat biedt u voornamelijk?",
+          type: "radio",
+          options: [
+            { value: "ordinateur", title: "Computer" },
+            { value: "smartphone", title: "Smartphone" },
+            { value: "les_deux", title: "Meerdere toestellen" }
+          ]
+        },
+        {
+          eyebrow: "Uw woord",
+          title: "Wat zou Auctelia kunnen verbeteren zodat u meer zou bieden?",
+          type: "textarea",
+          optional: true,
+          placeholder: "Bijvoorbeeld: meer loten in mijn regio, gedetailleerdere foto's, eenvoudigere ophaling…"
+        }
+      ]
+    }
+  };
+
+  var FIELD_NAMES = ["segment", "nps", "csat_confiance", "csat_descriptions", "ces_enlevement", "freins", "usage_mobile", "verbatim"];
+
+  window.AU_SURVEY_CONFIG = {
+    i18n: I18N,
+    fieldNames: FIELD_NAMES,
+    surveyType: "acheteurs",
+    thanksUrl: "merci.html"
+  };
+})();
+</script>
+<script src="assets/survey-engine.js"></script>
+</body>
+</html>
