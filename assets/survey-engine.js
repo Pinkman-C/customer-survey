@@ -8,6 +8,18 @@
   var cfg = window.AU_SURVEY_CONFIG;
   if (!cfg) return;
 
+  /* ------------------------------------------------------------------
+     Anti double-submission — once a respondent has successfully (or
+     even semi-successfully, see submitSurvey) submitted this survey
+     type, never show the form again on this device/browser.
+  ------------------------------------------------------------------ */
+  var SUBMIT_FLAG_KEY = "au_submitted_" + cfg.surveyType;
+  if (localStorage.getItem(SUBMIT_FLAG_KEY)) {
+    var alreadyLang = (new URLSearchParams(window.location.search)).get("lang") === "nl" ? "nl" : "fr";
+    window.location.replace(cfg.thanksUrl + "?lang=" + alreadyLang);
+    return;
+  }
+
   var STAR_SVG = '<svg viewBox="0 0 24 24"><path d="M12 2.5l2.9 6.4 6.9.7-5.2 4.7 1.5 6.8L12 17.9 5.9 21.1l1.5-6.8L2.2 9.6l6.9-.7L12 2.5z"/></svg>';
   var CHECK_SVG_TEMPLATE = null;
 
@@ -60,9 +72,73 @@
     answers: {}
   };
 
+  /* ------------------------------------------------------------------
+     Restore in-progress answers after a language switch (see the lang
+     switcher below, which stashes state here right before reloading).
+  ------------------------------------------------------------------ */
+  var ANSWERS_KEY = "au_answers_" + cfg.surveyType;
+  var savedState = sessionStorage.getItem(ANSWERS_KEY);
+  if (savedState) {
+    sessionStorage.removeItem(ANSWERS_KEY);
+    try {
+      var parsedState = JSON.parse(savedState);
+      if (parsedState && parsedState.answers) {
+        state.answers = parsedState.answers;
+        state.step = parsedState.step || 0;
+      }
+    } catch (e) { /* corrupt/old state, ignore and start fresh */ }
+  }
+
   var t = cfg.i18n[lang];
   var questions = t.q;
   var total = questions.length;
+
+  /* ------------------------------------------------------------------
+     Skip logic — a question can declare skipIf(answers) to be hidden
+     based on earlier answers (e.g. segment). Navigation always steps
+     over hidden questions; the progress bar counts only visible ones.
+  ------------------------------------------------------------------ */
+  function isVisible(index) {
+    var q = questions[index];
+    return !q.skipIf || !q.skipIf(state.answers);
+  }
+
+  function visibleCount() {
+    var count = 0;
+    for (var i = 0; i < total; i++) if (isVisible(i)) count++;
+    return count;
+  }
+
+  function visiblePosition(index) {
+    var pos = 0;
+    for (var i = 0; i <= index; i++) if (isVisible(i)) pos++;
+    return pos;
+  }
+
+  function nextVisibleIndex(fromIndex) {
+    var i = fromIndex + 1;
+    while (i < total && !isVisible(i)) i++;
+    return i;
+  }
+
+  function prevVisibleIndex(fromIndex) {
+    var i = fromIndex - 1;
+    while (i >= 0 && !isVisible(i)) i--;
+    return i;
+  }
+
+  function pruneSkippedAnswers() {
+    for (var i = 0; i < total; i++) {
+      if (!isVisible(i)) delete state.answers[FIELD(i)];
+    }
+  }
+
+  // Guard against a restored step (see language-switch restore above)
+  // that's no longer visible for the current answers.
+  if (!isVisible(state.step)) {
+    var fixedStep = nextVisibleIndex(state.step - 1);
+    state.step = fixedStep < total ? fixedStep : Math.max(0, prevVisibleIndex(total));
+  }
 
   var stepperEl = document.getElementById("stepper");
   var progressFill = document.getElementById("progress-fill");
@@ -79,6 +155,7 @@
     else btn.classList.remove("active");
     btn.addEventListener("click", function () {
       var newLang = btn.dataset.lang;
+      sessionStorage.setItem(ANSWERS_KEY, JSON.stringify({ answers: state.answers, step: state.step }));
       var url = new URL(window.location.href);
       url.searchParams.set("lang", newLang);
       window.location.href = url.toString();
@@ -288,16 +365,19 @@
 
   function renderNav(index) {
     var row = el("div", "au-nav-row");
-    if (index > 0) {
+    if (prevVisibleIndex(index) >= 0) {
       var back = el("button", "au-btn au-btn-ghost", t.back);
       back.type = "button";
-      back.addEventListener("click", function () { goTo(index - 1); });
+      back.addEventListener("click", function () {
+        var prev = prevVisibleIndex(index);
+        if (prev >= 0) goTo(prev);
+      });
       row.appendChild(back);
     } else {
       row.appendChild(el("span"));
     }
 
-    var isLast = index === total - 1;
+    var isLast = nextVisibleIndex(index) >= total;
     var next = el("button", "au-btn au-btn-primary", isLast ? t.submit : t.next);
     next.type = "button";
     next.disabled = !isAnswered(index);
@@ -330,16 +410,19 @@
       if (skipIfInvalid) return;
       return;
     }
-    if (state.step < total - 1) {
-      state.step += 1;
+    var next = nextVisibleIndex(state.step);
+    if (next < total) {
+      state.step = next;
       render();
     }
   }
 
   function updateProgress() {
-    var pct = ((state.step + 1) / total) * 100;
+    var pos = visiblePosition(state.step);
+    var count = visibleCount();
+    var pct = (pos / count) * 100;
     progressFill.style.width = pct + "%";
-    progressText.textContent = (state.step + 1) + " / " + total;
+    progressText.textContent = pos + " / " + count;
   }
 
   function render() {
@@ -353,6 +436,8 @@
      Submission
   ------------------------------------------------------------------ */
   function buildPayload() {
+    pruneSkippedAnswers();
+
     var payload = {
       timestamp: new Date().toISOString(),
       lang: lang,
@@ -365,6 +450,18 @@
       if (Array.isArray(val)) val = val.join(", ");
       payload[name] = val !== undefined ? val : "";
     });
+
+    // Record the shuffled display order for randomized checklists, so
+    // the raw data keeps a record of what each respondent actually saw
+    // (see the anti-primacy-bias shuffle in getDisplayOptions).
+    questions.forEach(function (q, idx) {
+      if (q.type === "checkbox" && q.shuffle) {
+        var field = FIELD(idx);
+        var order = shuffleCache[field];
+        payload[field + "_order"] = order ? order.map(function (o) { return o.value; }).join(", ") : "";
+      }
+    });
+
     return payload;
   }
 
@@ -373,17 +470,19 @@
     btn.textContent = t.submitting;
     var payload = buildPayload();
 
+    function finish() {
+      localStorage.setItem(SUBMIT_FLAG_KEY, "1");
+      sessionStorage.removeItem(ANSWERS_KEY);
+      window.location.href = cfg.thanksUrl + "?lang=" + lang;
+    }
+
     fetch("/api/submit", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload)
     })
-      .then(function () {
-        window.location.href = cfg.thanksUrl + "?lang=" + lang;
-      })
-      .catch(function () {
-        window.location.href = cfg.thanksUrl + "?lang=" + lang;
-      });
+      .then(finish)
+      .catch(finish);
   }
 
   render();

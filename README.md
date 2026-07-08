@@ -110,14 +110,18 @@ Le payload JSON envoyé par le formulaire (et reçu par le Webhook n8n) contient
 **Formulaire Vendeurs** — onglet Google Sheets `Vendeurs`, colonnes dans cet ordre :
 
 ```
-timestamp | lang | source | user_agent | survey_type | segment | nps | csat_prix | csat_suivi | ces_facilite | concurrence | intention_retour | verbatim
+timestamp | lang | source | user_agent | survey_type | segment | nps | csat_prix | csat_suivi | ces_facilite | concurrence | concurrence_order | intention_retour | verbatim
 ```
 
 **Formulaire Acheteurs** — onglet Google Sheets `Acheteurs`, colonnes dans cet ordre :
 
 ```
-timestamp | lang | source | user_agent | survey_type | segment | nps | csat_confiance | csat_descriptions | ces_enlevement | freins | usage_mobile | verbatim
+timestamp | lang | source | user_agent | survey_type | segment | nps | csat_confiance | csat_descriptions | ces_enlevement | freins | freins_order | usage_mobile | verbatim
 ```
+
+`concurrence_order` / `freins_order` enregistrent l'ordre d'affichage réellement vu par le répondant pour la question à choix multiples (dont les options sont mélangées à chaque chargement pour éviter le biais de position — voir section 8). C'est un champ d'audit méthodologique, pas une donnée à analyser directement.
+
+`csat_descriptions` et `ces_enlevement` (Acheteurs) peuvent arriver vides : ces deux questions sont sautées pour le segment "Inscrit, aucun achat" (`non_acheteur`), qui n'a jamais réceptionné de lot. Le dashboard exclut automatiquement ces cellules vides du calcul des moyennes.
 
 Dans le node Google Sheets de n8n, mappe chaque colonne sur `{{$json.<nom_du_champ>}}` (ex: `{{$json.nps}}`, `{{$json.verbatim}}`).
 
@@ -126,13 +130,13 @@ Dans le node Google Sheets de n8n, mappe chaque colonne sur `{{$json.<nom_du_cha
 **Onglet "Vendeurs"** — ligne d'en-tête à coller en `A1` :
 
 ```
-timestamp	lang	source	user_agent	survey_type	segment	nps	csat_prix	csat_suivi	ces_facilite	concurrence	intention_retour	verbatim
+timestamp	lang	source	user_agent	survey_type	segment	nps	csat_prix	csat_suivi	ces_facilite	concurrence	concurrence_order	intention_retour	verbatim
 ```
 
 **Onglet "Acheteurs"** — ligne d'en-tête à coller en `A1` :
 
 ```
-timestamp	lang	source	user_agent	survey_type	segment	nps	csat_confiance	csat_descriptions	ces_enlevement	freins	usage_mobile	verbatim
+timestamp	lang	source	user_agent	survey_type	segment	nps	csat_confiance	csat_descriptions	ces_enlevement	freins	freins_order	usage_mobile	verbatim
 ```
 
 (Copie chaque ligne dans la cellule `A1` de l'onglet correspondant — Google Sheets répartit automatiquement les valeurs séparées par tabulation dans les colonnes.)
@@ -221,3 +225,7 @@ npx vercel dev
 - Si le webhook n8n est indisponible, le formulaire affiche quand même la page de remerciement — c'est voulu (voir section 3.1). Surveiller les logs Vercel pour détecter les échecs silencieux d'écriture Google Sheets.
 - **Anti-biais des questions à choix multiples (Q6)** : les options des cases à cocher sont marquées `shuffle: true` avec une liste `anchors` (ex: `["rien_satisfait", "autre"]`) dans la config de la question. L'ordre des autres options est randomisé une fois par répondant (calculé et mis en cache au premier rendu, stable ensuite) pour éviter le biais de position — sans ça, l'item listé en premier est mécaniquement plus coché, indépendamment de sa pertinence réelle. Les items d'ancrage restent toujours en dernier, dans l'ordre déclaré. Pour ajouter une nouvelle option à une liste existante, il suffit de l'ajouter dans le tableau `options` — elle sera automatiquement incluse dans le mélange sauf si son `value` est aussi listé dans `anchors`.
 - **Corrélation NPS × irritants (dashboard)** : le bloc "Corrélation avec le NPS" sous le graphique Freins/Concurrence calcule, après coup, le NPS moyen des répondants ayant coché chaque item vs. la moyenne globale. C'est volontairement une analyse a posteriori et non une question posée directement (du type "est-ce que X vous a fait moins acheter ?") — poser la causalité dans la question orienterait la réponse. Le calcul n'affiche un delta que si au moins 5 répondants ont coché l'item, pour éviter des moyennes non significatives sur un petit échantillon.
+- **Skip logic (Acheteurs Q4/Q5)** : les questions peuvent porter une propriété `skipIf: function(answers) { ... }` dans leur config — si elle retourne `true`, la question est sautée à la navigation et exclue du calcul de la barre de progression (`X / Y` s'adapte au nombre réel de questions visibles). Actuellement utilisé pour cacher "Qualité des descriptions" et "Enlèvement" au segment "Inscrit, aucun achat", qui n'a jamais réceptionné de lot. Les réponses des questions sautées sont retirées du payload avant l'envoi (pas de valeur fantôme dans Google Sheets).
+- **Échelles CES (effort)** : `1 = négatif` (très difficile/compliqué) et `7 = positif` (très facile/fluide), dans le même sens que le NPS et les CSAT (plus haut = mieux). Si vous ajoutez une nouvelle question CES, gardez cette convention — le dashboard (KPI, code couleur du thermomètre) suppose que 7 est la meilleure note.
+- **Persistance de la langue en cours de formulaire** : cliquer sur FR/NL en pleine saisie sauvegarde `state.answers` dans `sessionStorage` juste avant le rechargement de page, et les restaure au chargement dans la nouvelle langue — le répondant ne reperd pas sa progression en changeant de langue.
+- **Anti-double-soumission** : après un envoi (réussi ou non, voir plus haut), un flag est posé dans `localStorage` (`au_submitted_<survey_type>`). Toute visite ultérieure du même formulaire sur le même navigateur redirige directement vers la page de remerciement, sans réafficher le questionnaire. Utile pour les tests : videz le `localStorage` du site (ou ouvrez une fenêtre de navigation privée) pour re-soumettre.

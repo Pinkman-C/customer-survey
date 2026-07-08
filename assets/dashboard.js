@@ -19,13 +19,13 @@
   };
 
   var COLUMNS = {
-    vendeurs: ["timestamp", "lang", "source", "user_agent", "survey_type", "segment", "nps", "csat_prix", "csat_suivi", "ces_facilite", "concurrence", "intention_retour", "verbatim"],
-    acheteurs: ["timestamp", "lang", "source", "user_agent", "survey_type", "segment", "nps", "csat_confiance", "csat_descriptions", "ces_enlevement", "freins", "usage_mobile", "verbatim"]
+    vendeurs: ["timestamp", "lang", "source", "user_agent", "survey_type", "segment", "nps", "csat_prix", "csat_suivi", "ces_facilite", "concurrence", "concurrence_order", "intention_retour", "verbatim"],
+    acheteurs: ["timestamp", "lang", "source", "user_agent", "survey_type", "segment", "nps", "csat_confiance", "csat_descriptions", "ces_enlevement", "freins", "freins_order", "usage_mobile", "verbatim"]
   };
 
   var SEGMENT_LABELS = {
-    vendeurs: { actif: "Vendeur actif", passe: "Vendeur passé", occasionnel: "Vendeur occasionnel" },
-    acheteurs: { regulier: "Acheteur régulier", occasionnel: "Acheteur occasionnel", non_acheteur: "Inscrit non-acheteur" }
+    vendeurs: { actif: "Plusieurs ventes", passe: "Dernière vente >1 an", occasionnel: "Une seule vente" },
+    acheteurs: { regulier: "3+ achats (12 mois)", occasionnel: "1-2 achats", non_acheteur: "Inscrit, aucun achat" }
   };
 
   var CHOICE_LABELS = {
@@ -37,7 +37,7 @@
       prix_reserve_eleve: "Prix de réserve trop élevés", peu_de_lots: "Trop peu de lots dans ma catégorie",
       manque_confiance_descriptions: "Manque de confiance dans les descriptions", logistique_compliquee: "Logistique d'enlèvement compliquée",
       concurrence_forte: "Concurrence trop forte", frais_adjudication: "Frais d'adjudication",
-      annulation_post_adjudication: "Annulation d'achat après adjudication", prix_final_superieur_neuf: "Prix final > équivalent neuf",
+      annulation_post_adjudication: "Risque d'annulation après adjudication", prix_final_superieur_neuf: "Prix final > équivalent neuf",
       rien_satisfait: "Rien, je suis satisfait", autre: "Autre"
     }
   };
@@ -184,9 +184,11 @@
     return dataLines.map(function (line) {
       var obj = {};
       header.forEach(function (h, idx) { obj[h] = line[idx] !== undefined ? line[idx] : ""; });
-      if (obj.nps !== undefined) obj.nps = Number(obj.nps);
+      if (obj.nps !== undefined && obj.nps !== "") obj.nps = Number(obj.nps);
       columns.forEach(function (col) {
-        if (/^(csat_|ces_)/.test(col) && obj[col] !== undefined) obj[col] = Number(obj[col]);
+        // Leave blank cells as "" (question was skipped) rather than coercing
+        // to 0 — average() below relies on "" being excluded, not counted.
+        if (/^(csat_|ces_)/.test(col) && obj[col] !== undefined && obj[col] !== "") obj[col] = Number(obj[col]);
       });
       return obj;
     });
@@ -256,7 +258,8 @@
       var csatBase = category === "promoter" ? 4 : (category === "passive" ? 3 : 2);
       var csat1 = clamp(csatBase + Math.round(rng() * 2) - 1, 1, 5);
       var csat2 = clamp(csatBase + Math.round(rng() * 2) - 1, 1, 5);
-      var cesBase = category === "promoter" ? 2 : (category === "passive" ? 4 : 6);
+      // 7 = positive (facile/fluide), 1 = negative — same direction as NPS/CSAT.
+      var cesBase = category === "promoter" ? 6 : (category === "passive" ? 4 : 2);
       var ces = clamp(cesBase + Math.round(rng() * 2) - 1, 1, 7);
 
       var numChoices = 1 + Math.floor(rng() * 2);
@@ -265,6 +268,7 @@
         choices.push(choiceKeys[Math.floor(rng() * choiceKeys.length)]);
       }
       choices = Array.from(new Set(choices));
+      var shownOrder = shuffleWithRng(choiceKeys.slice(), rng);
 
       var pool = VERBATIMS_MOCK[type][category];
       var hasVerbatim = rng() < 0.5;
@@ -289,13 +293,17 @@
         row.csat_suivi = csat2;
         row.ces_facilite = ces;
         row.concurrence = choices.join(", ");
+        row.concurrence_order = shownOrder.join(", ");
         var intentions = ["certainement", "probablement", "ne_sait_pas", "probablement_pas", "non"];
         row.intention_retour = intentions[category === "promoter" ? Math.floor(rng() * 2) : (category === "passive" ? 2 : 3 + Math.floor(rng() * 2))];
       } else {
         row.csat_confiance = csat1;
-        row.csat_descriptions = csat2;
-        row.ces_enlevement = ces;
+        // Q4/Q5 are skipped in the real form for "non_acheteur" — mirror
+        // that here so the dashboard's blank-value handling gets exercised.
+        row.csat_descriptions = row.segment === "non_acheteur" ? "" : csat2;
+        row.ces_enlevement = row.segment === "non_acheteur" ? "" : ces;
         row.freins = choices.join(", ");
+        row.freins_order = shownOrder.join(", ");
         var devices = ["ordinateur", "smartphone", "les_deux"];
         row.usage_mobile = devices[Math.floor(rng() * devices.length)];
       }
@@ -308,6 +316,14 @@
   }
 
   function clamp(v, min, max) { return Math.max(min, Math.min(max, v)); }
+
+  function shuffleWithRng(arr, rng) {
+    for (var i = arr.length - 1; i > 0; i--) {
+      var j = Math.floor(rng() * (i + 1));
+      var tmp = arr[i]; arr[i] = arr[j]; arr[j] = tmp;
+    }
+    return arr;
+  }
 
   /* ------------------------------------------------------------------
      Computations
@@ -322,7 +338,14 @@
   }
 
   function average(rows, field) {
-    var vals = rows.map(function (r) { return Number(r[field]); }).filter(function (v) { return !isNaN(v); });
+    // Skipped questions (e.g. csat_descriptions/ces_enlevement for
+    // non_acheteur) store "" — exclude those rather than let Number("")
+    // silently coerce to 0 and drag the average down.
+    var vals = rows
+      .map(function (r) { return r[field]; })
+      .filter(function (v) { return v !== undefined && v !== null && v !== ""; })
+      .map(Number)
+      .filter(function (v) { return !isNaN(v); });
     if (!vals.length) return 0;
     return vals.reduce(function (a, b) { return a + b; }, 0) / vals.length;
   }
@@ -428,10 +451,9 @@
     grid.appendChild(kpiCard({
       label: "CES — Effort",
       value: rows.length ? cesAvg.toFixed(1) + " / 7" : "—",
-      sub: "1 = facile/fluide · 7 = difficile/compliqué",
+      sub: "1 = difficile/compliqué · 7 = facile/fluide",
       delta: cesDelta,
-      deltaInverse: true,
-      thermo: { pct: (cesAvg / 7) * 100, color: thermoColor(7 - cesAvg, 1, 7) }
+      thermo: { pct: (cesAvg / 7) * 100, color: thermoColor(cesAvg, 1, 7) }
     }));
   }
 

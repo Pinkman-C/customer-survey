@@ -52,8 +52,8 @@
       back: "Retour",
       submit: "Envoyer",
       submitting: "Envoi en cours…",
-      npsLow: "0 = Pas du tout",
-      npsHigh: "10 = Certainement",
+      npsLow: "0 = Pas du tout probable",
+      npsHigh: "10 = Extrêmement probable",
       charLimit: "caractères",
       errorRequired: "Merci de répondre pour continuer.",
       q: [
@@ -62,9 +62,9 @@
           title: "Quelle situation vous correspond le mieux ?",
           type: "radio",
           options: [
-            { value: "actif", title: "Vendeur actif", desc: "J'ai vendu du matériel via Auctelia au cours des 12 derniers mois." },
-            { value: "passe", title: "Vendeur passé", desc: "Ma dernière vente remonte à plus d'un an." },
-            { value: "occasionnel", title: "Vendeur occasionnel", desc: "Je n'ai vendu qu'une seule fois à ce jour." }
+            { value: "actif", title: "Plusieurs ventes via Auctelia" },
+            { value: "occasionnel", title: "Une seule vente" },
+            { value: "passe", title: "Dernière vente il y a plus d'un an" }
           ]
         },
         {
@@ -90,15 +90,14 @@
           eyebrow: "Facilité d'usage",
           title: "Mettre un bien en vente sur Auctelia a été…",
           type: "ces",
-          lowLabel: "Très facile",
-          highLabel: "Très difficile"
+          lowLabel: "Très difficile",
+          highLabel: "Très facile"
         },
         {
           eyebrow: "Concurrence",
-          title: "Avez-vous déjà vendu ou envisagé de vendre via une autre plateforme ?",
+          title: "Avez-vous déjà vendu via une autre plateforme ?",
           help: "Plusieurs choix possibles.",
           type: "checkbox",
-          optional: true,
           shuffle: true,
           anchors: ["autre", "non_uniquement_auctelia"],
           options: [
@@ -140,8 +139,8 @@
       back: "Terug",
       submit: "Verzenden",
       submitting: "Bezig met verzenden…",
-      npsLow: "0 = Helemaal niet",
-      npsHigh: "10 = Zeker wel",
+      npsLow: "0 = Helemaal niet waarschijnlijk",
+      npsHigh: "10 = Uiterst waarschijnlijk",
       charLimit: "tekens",
       errorRequired: "Gelieve te antwoorden om verder te gaan.",
       q: [
@@ -150,9 +149,9 @@
           title: "Welke situatie past het best bij u?",
           type: "radio",
           options: [
-            { value: "actif", title: "Actieve verkoper", desc: "Ik heb de afgelopen 12 maanden materiaal verkocht via Auctelia." },
-            { value: "passe", title: "Voormalige verkoper", desc: "Mijn laatste verkoop dateert van meer dan een jaar geleden." },
-            { value: "occasionnel", title: "Occasionele verkoper", desc: "Ik heb tot nu toe slechts één keer verkocht." }
+            { value: "actif", title: "Meerdere verkopen via Auctelia" },
+            { value: "occasionnel", title: "Eén enkele verkoop" },
+            { value: "passe", title: "Laatste verkoop meer dan een jaar geleden" }
           ]
         },
         {
@@ -178,15 +177,14 @@
           eyebrow: "Gebruiksgemak",
           title: "Een goed te koop zetten op Auctelia was…",
           type: "ces",
-          lowLabel: "Zeer eenvoudig",
-          highLabel: "Zeer moeilijk"
+          lowLabel: "Zeer moeilijk",
+          highLabel: "Zeer eenvoudig"
         },
         {
           eyebrow: "Concurrentie",
-          title: "Heeft u al eens verkocht of overwogen te verkopen via een ander platform?",
+          title: "Heeft u al eens verkocht via een ander platform?",
           help: "Meerdere keuzes mogelijk.",
           type: "checkbox",
-          optional: true,
           shuffle: true,
           anchors: ["autre", "non_uniquement_auctelia"],
           options: [

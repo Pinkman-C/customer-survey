@@ -49,8 +49,8 @@
       back: "Retour",
       submit: "Envoyer",
       submitting: "Envoi en cours…",
-      npsLow: "0 = Pas du tout",
-      npsHigh: "10 = Certainement",
+      npsLow: "0 = Pas du tout probable",
+      npsHigh: "10 = Extrêmement probable",
       charLimit: "caractères",
       errorRequired: "Merci de répondre pour continuer.",
       q: [
@@ -59,9 +59,9 @@
           title: "Quelle situation vous correspond ?",
           type: "radio",
           options: [
-            { value: "regulier", title: "Acheteur régulier", desc: "Plusieurs achats au cours des 12 derniers mois." },
-            { value: "occasionnel", title: "Acheteur occasionnel", desc: "1 à 2 achats à ce jour." },
-            { value: "non_acheteur", title: "Inscrit non-acheteur", desc: "Je suis inscrit mais je n'ai jamais remporté de lot." }
+            { value: "regulier", title: "3 achats ou plus (12 derniers mois)" },
+            { value: "occasionnel", title: "1 à 2 achats" },
+            { value: "non_acheteur", title: "Inscrit, aucun achat" }
           ]
         },
         {
@@ -71,30 +71,31 @@
         },
         {
           eyebrow: "Confiance",
-          title: "Faites-vous confiance à Auctelia pour garantir des transactions fiables et sécurisées ?",
+          title: "Quel est votre niveau de confiance dans Auctelia pour des transactions sécurisées ?",
           type: "stars",
           lowLabel: "Pas confiance",
           highLabel: "Totalement confiance"
         },
         {
           eyebrow: "Qualité des annonces",
-          title: "Les descriptions et photos des lots correspondent-elles à la réalité du matériel reçu ?",
+          title: "Dans quelle mesure les descriptions des lots correspondent-elles au matériel reçu ?",
           type: "stars",
           lowLabel: "Jamais",
-          highLabel: "Toujours"
+          highLabel: "Toujours",
+          skipIf: function (a) { return a.segment === "non_acheteur"; }
         },
         {
           eyebrow: "Enlèvement",
           title: "Récupérer un lot après adjudication a été…",
           type: "ces",
-          lowLabel: "Très fluide",
-          highLabel: "Très compliqué"
+          lowLabel: "Très compliqué",
+          highLabel: "Très fluide",
+          skipIf: function (a) { return a.segment === "non_acheteur"; }
         },
         {
           eyebrow: "Freins",
           title: "Qu'est-ce qui vous retient d'enchérir plus souvent ou sur davantage de lots ?",
           type: "checkbox",
-          optional: true,
           shuffle: true,
           anchors: ["rien_satisfait", "autre"],
           options: [
@@ -104,7 +105,7 @@
             { value: "logistique_compliquee", label: "Logistique d'enlèvement compliquée" },
             { value: "concurrence_forte", label: "Concurrence trop forte" },
             { value: "frais_adjudication", label: "Frais d'adjudication" },
-            { value: "annulation_post_adjudication", label: "J'ai déjà vécu l'annulation d'un achat après avoir remporté une enchère" },
+            { value: "annulation_post_adjudication", label: "Le risque d'annulation après adjudication" },
             { value: "prix_final_superieur_neuf", label: "Prix final plus élevé qu'un équivalent neuf" },
             { value: "rien_satisfait", label: "Rien, je suis satisfait" },
             { value: "autre", label: "Autre" }
@@ -117,7 +118,7 @@
           options: [
             { value: "ordinateur", title: "Ordinateur" },
             { value: "smartphone", title: "Smartphone" },
-            { value: "les_deux", title: "Les deux" }
+            { value: "les_deux", title: "Plusieurs appareils" }
           ]
         },
         {
@@ -136,8 +137,8 @@
       back: "Terug",
       submit: "Verzenden",
       submitting: "Bezig met verzenden…",
-      npsLow: "0 = Helemaal niet",
-      npsHigh: "10 = Zeker wel",
+      npsLow: "0 = Helemaal niet waarschijnlijk",
+      npsHigh: "10 = Uiterst waarschijnlijk",
       charLimit: "tekens",
       errorRequired: "Gelieve te antwoorden om verder te gaan.",
       q: [
@@ -146,9 +147,9 @@
           title: "Welke situatie past bij u?",
           type: "radio",
           options: [
-            { value: "regulier", title: "Regelmatige koper", desc: "Meerdere aankopen in de afgelopen 12 maanden." },
-            { value: "occasionnel", title: "Occasionele koper", desc: "1 tot 2 aankopen tot nu toe." },
-            { value: "non_acheteur", title: "Ingeschreven niet-koper", desc: "Ik ben ingeschreven maar heb nog nooit een lot gewonnen." }
+            { value: "regulier", title: "3 of meer aankopen (laatste 12 maanden)" },
+            { value: "occasionnel", title: "1 tot 2 aankopen" },
+            { value: "non_acheteur", title: "Ingeschreven, geen aankoop" }
           ]
         },
         {
@@ -158,30 +159,31 @@
         },
         {
           eyebrow: "Vertrouwen",
-          title: "Vertrouwt u Auctelia om betrouwbare en veilige transacties te garanderen?",
+          title: "In welke mate heeft u vertrouwen in Auctelia voor veilige transacties?",
           type: "stars",
           lowLabel: "Geen vertrouwen",
           highLabel: "Volledig vertrouwen"
         },
         {
           eyebrow: "Kwaliteit van de advertenties",
-          title: "Stemmen de beschrijvingen en foto's van de loten overeen met het ontvangen materiaal?",
+          title: "In welke mate komen de beschrijvingen van de loten overeen met het ontvangen materiaal?",
           type: "stars",
           lowLabel: "Nooit",
-          highLabel: "Altijd"
+          highLabel: "Altijd",
+          skipIf: function (a) { return a.segment === "non_acheteur"; }
         },
         {
           eyebrow: "Ophaling",
           title: "Een lot ophalen na toewijzing was…",
           type: "ces",
-          lowLabel: "Zeer vlot",
-          highLabel: "Zeer omslachtig"
+          lowLabel: "Zeer omslachtig",
+          highLabel: "Zeer vlot",
+          skipIf: function (a) { return a.segment === "non_acheteur"; }
         },
         {
           eyebrow: "Drempels",
           title: "Wat weerhoudt u ervan vaker of op meer loten te bieden?",
           type: "checkbox",
-          optional: true,
           shuffle: true,
           anchors: ["rien_satisfait", "autre"],
           options: [
@@ -191,7 +193,7 @@
             { value: "logistique_compliquee", label: "Ophaallogistiek te ingewikkeld" },
             { value: "concurrence_forte", label: "Te sterke concurrentie" },
             { value: "frais_adjudication", label: "Toewijzingskosten" },
-            { value: "annulation_post_adjudication", label: "Ik heb al een aankoop zien annuleren nadat ik een veiling had gewonnen" },
+            { value: "annulation_post_adjudication", label: "Het risico op annulering na toewijzing" },
             { value: "prix_final_superieur_neuf", label: "Eindprijs hoger dan een gelijkwaardig nieuw toestel" },
             { value: "rien_satisfait", label: "Niets, ik ben tevreden" },
             { value: "autre", label: "Andere" }
@@ -204,7 +206,7 @@
           options: [
             { value: "ordinateur", title: "Computer" },
             { value: "smartphone", title: "Smartphone" },
-            { value: "les_deux", title: "Beide" }
+            { value: "les_deux", title: "Meerdere toestellen" }
           ]
         },
         {
