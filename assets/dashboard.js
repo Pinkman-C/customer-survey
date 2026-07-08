@@ -35,9 +35,8 @@
     },
     acheteurs: {
       prix_reserve_eleve: "Prix de réserve trop élevés", peu_de_lots: "Trop peu de lots dans ma catégorie",
-      manque_confiance_descriptions: "Manque de confiance dans les descriptions", logistique_compliquee: "Logistique d'enlèvement compliquée",
-      concurrence_forte: "Concurrence trop forte", frais_adjudication: "Frais d'adjudication",
-      annulation_post_adjudication: "Risque d'annulation après adjudication", prix_final_superieur_neuf: "Prix final > équivalent neuf",
+      logistique_compliquee: "Logistique d'enlèvement compliquée", concurrence_forte: "Concurrence trop forte",
+      frais_adjudication: "Frais d'adjudication", annulation_post_adjudication: "Risque d'annulation après adjudication",
       rien_satisfait: "Rien, je suis satisfait", autre: "Autre"
     }
   };
