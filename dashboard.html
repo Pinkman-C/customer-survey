@@ -30,17 +30,30 @@
   <aside class="dash-sidebar">
     <div class="au-logo"><span>Auctelia</span><span class="dot">.</span></div>
 
-    <div class="dash-type-switch" role="group" aria-label="Type d'enquête">
-      <button type="button" data-type="vendeurs" class="active">Vendeurs</button>
-      <button type="button" data-type="acheteurs">Acheteurs</button>
+    <div>
+      <div class="dash-switch-label">Audience</div>
+      <div class="dash-type-switch audience" id="audience-switch" role="group" aria-label="Audience">
+        <button type="button" data-audience="actif" class="active">Actifs</button>
+        <button type="button" data-audience="churn">Churn</button>
+      </div>
+    </div>
+
+    <div>
+      <div class="dash-switch-label">Type d'enquête</div>
+      <div class="dash-type-switch" id="type-switch" role="group" aria-label="Type d'enquête">
+        <button type="button" data-type="vendeurs" class="active">Vendeurs</button>
+        <button type="button" data-type="acheteurs">Acheteurs</button>
+      </div>
     </div>
 
     <nav class="dash-nav">
-      <a href="#section-kpi">Vue d'ensemble</a>
+      <a href="#section-synthese">Synthèse comparative</a>
+      <a href="#section-kpi">Scores clés</a>
+      <a href="#section-reserve">Prix de réserve</a>
+      <a href="#section-choices">Freins &amp; raisons</a>
       <a href="#section-nps">Distribution NPS</a>
       <a href="#section-segments">Segments</a>
       <a href="#section-csat">Satisfaction détaillée</a>
-      <a href="#section-choices">Freins &amp; concurrence</a>
       <a href="#section-verbatims">Verbatims</a>
       <a href="#section-raw">Données brutes</a>
     </nav>
@@ -63,6 +76,23 @@
       Données de démonstration — connectez une feuille Google Sheets publiée en CSV pour afficher les vraies réponses (voir README).
     </div>
 
+    <!-- Bloc 0 — Synthèse comparative des 4 segments -->
+    <section class="dash-section" id="section-synthese">
+      <h2 class="dash-section-title">Synthèse comparative</h2>
+      <p class="dash-section-sub">Les 4 segments côte à côte, indépendamment du filtre ci-contre — cliquez une ligne pour l'ouvrir en détail.</p>
+      <div class="dash-card">
+        <div class="synth-table-wrap">
+          <table class="synth-table">
+            <thead><tr><th>Segment</th><th>n</th><th>NPS</th><th>Réserve non atteinte</th><th>Signal principal</th></tr></thead>
+            <tbody id="synth-body">
+              <tr><td colspan="5" style="color:var(--au-ink3);">Chargement…</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="synth-caption">« Réserve non atteinte » = part des répondants concernés déclarant que ça arrive « souvent »/« plusieurs fois ». Calculé uniquement parmi les vendeurs ayant mis une réserve.</div>
+      </div>
+    </section>
+
     <!-- Bloc 1 — KPI -->
     <section class="dash-section" id="section-kpi">
       <h2 class="dash-section-title">Scores clés</h2>
@@ -73,7 +103,47 @@
       </div>
     </section>
 
-    <!-- Bloc 2 — NPS distribution -->
+    <!-- Bloc 2 — Prix de réserve -->
+    <section class="dash-section" id="section-reserve">
+      <h2 class="dash-section-title">Prix de réserve</h2>
+      <p class="dash-section-sub" id="reserve-sub"></p>
+      <div class="dash-card">
+        <div style="font-weight:600; margin-bottom:8px; color:var(--au-dark);">Fréquence de réserve non atteinte, déclarée</div>
+        <div id="reserve-dist"></div>
+        <div class="cross-note" id="reserve-note"></div>
+      </div>
+      <div class="dash-card" id="reserve-cross-card" style="margin-top:16px; display:none;">
+        <div style="font-weight:600; margin-bottom:8px; color:var(--au-dark);">Qui décide du prix de réserve, et à quelle fréquence il n'est pas atteint</div>
+        <div class="cross-compare" id="reserve-cross"></div>
+        <div class="insight-box" id="reserve-insight" style="display:none;"><span class="insight-label">Ce que ça dit</span><p id="reserve-insight-text"></p></div>
+      </div>
+    </section>
+
+    <!-- Bloc 3 — Freins / raisons (choix multiple + corrélation NPS) -->
+    <section class="dash-section" id="section-choices">
+      <h2 class="dash-section-title" id="choices-title">Freins &amp; raisons</h2>
+      <p class="dash-section-sub" id="choices-sub"></p>
+      <div class="dash-card">
+        <div class="dash-chart-wrap" id="choices-chart-wrap" style="height:320px;">
+          <canvas id="chart-choices"></canvas>
+        </div>
+      </div>
+      <div class="dash-card" style="margin-top:16px;">
+        <div style="font-weight:600; margin-bottom:8px; color:var(--au-dark);">Corrélation avec le NPS</div>
+        <div id="choices-correlation"></div>
+        <div class="insight-box" id="choices-insight" style="display:none;"><span class="insight-label">Ce que ça dit</span><p id="choices-insight-text"></p></div>
+      </div>
+      <div id="choices-block-2" style="display:none; margin-top:26px;">
+        <h2 class="dash-section-title" id="choices-title-2">—</h2>
+        <div class="dash-card">
+          <div class="dash-chart-wrap" id="choices-chart-wrap-2" style="height:280px;">
+            <canvas id="chart-choices-2"></canvas>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Bloc 4 — NPS distribution -->
     <section class="dash-section" id="section-nps">
       <h2 class="dash-section-title">Distribution des notes NPS</h2>
       <div class="dash-card">
@@ -83,7 +153,7 @@
       </div>
     </section>
 
-    <!-- Bloc 3 — Segments -->
+    <!-- Bloc 5 — Segments -->
     <section class="dash-section" id="section-segments">
       <h2 class="dash-section-title">Répartition par segment</h2>
       <div class="dash-card">
@@ -93,33 +163,19 @@
       </div>
     </section>
 
-    <!-- Bloc 4 — CSAT detail -->
+    <!-- Bloc 6 — CSAT detail -->
     <section class="dash-section" id="section-csat">
       <h2 class="dash-section-title">Questions de satisfaction détaillées</h2>
       <div class="dash-two-col" id="csat-charts-grid"></div>
     </section>
 
-    <!-- Bloc 5 — multi-choice -->
-    <section class="dash-section" id="section-choices">
-      <h2 class="dash-section-title" id="choices-title">Freins &amp; concurrence</h2>
-      <div class="dash-card">
-        <div class="dash-chart-wrap" id="choices-chart-wrap" style="height:320px;">
-          <canvas id="chart-choices"></canvas>
-        </div>
-      </div>
-      <div class="dash-card" style="margin-top:16px;">
-        <div style="font-weight:600; margin-bottom:8px; color:var(--au-dark);">Corrélation avec le NPS</div>
-        <div id="choices-correlation"></div>
-      </div>
-    </section>
-
-    <!-- Bloc 6 — verbatims -->
+    <!-- Bloc 7 — verbatims -->
     <section class="dash-section" id="section-verbatims">
       <h2 class="dash-section-title">Derniers verbatims</h2>
       <div class="dash-verbatim-list" id="verbatim-list"></div>
     </section>
 
-    <!-- Bloc 7 — raw data -->
+    <!-- Bloc 8 — raw data -->
     <section class="dash-section" id="section-raw">
       <h2 class="dash-section-title">Données brutes</h2>
       <div class="dash-card">

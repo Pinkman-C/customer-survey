@@ -4,6 +4,8 @@
   "rewrites": [
     { "source": "/vendeurs", "destination": "/vendeurs.html" },
     { "source": "/acheteurs", "destination": "/acheteurs.html" },
+    { "source": "/vendeurs-churn", "destination": "/vendeurs-churn.html" },
+    { "source": "/acheteurs-churn", "destination": "/acheteurs-churn.html" },
     { "source": "/merci", "destination": "/merci.html" },
     { "source": "/dashboard", "destination": "/dashboard.html" }
   ],

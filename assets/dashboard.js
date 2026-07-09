@@ -18,38 +18,101 @@
     }
   };
 
+  // Both audiences (actif/churn) submit into the same tab per survey type —
+  // see docs/2026-07-09-refonte-enquetes-design.md section 8. The `audience`
+  // column is what the dashboard filters on, not a separate sheet.
   var COLUMNS = {
-    vendeurs: ["timestamp", "lang", "source", "user_agent", "survey_type", "segment", "nps", "csat_prix", "csat_suivi", "ces_facilite", "concurrence", "concurrence_order", "intention_retour", "verbatim"],
-    acheteurs: ["timestamp", "lang", "source", "user_agent", "survey_type", "segment", "nps", "csat_confiance", "csat_descriptions", "ces_enlevement", "freins", "freins_order", "usage_mobile", "verbatim"]
+    vendeurs: [
+      "timestamp", "lang", "source", "user_agent", "survey_type", "audience",
+      "segment", "nps", "csat_prix", "ces_facilite",
+      "a_mis_reserve", "origine_prix_reserve", "freq_reserve_non_atteinte",
+      "intention_retour",
+      "raisons_arret", "raisons_arret_order", "raisons_arret_autre_detail",
+      "leviers_retour", "leviers_retour_order", "leviers_retour_autre_detail",
+      "verbatim"
+    ],
+    acheteurs: [
+      "timestamp", "lang", "source", "user_agent", "survey_type", "audience",
+      "segment", "nps", "csat_confiance", "csat_descriptions", "ces_enlevement",
+      "freq_reserve_non_atteinte",
+      "freins", "freins_order", "freins_autre_detail",
+      "raisons_arret", "raisons_arret_order", "raisons_arret_autre_detail",
+      "leviers_retour", "leviers_retour_order", "leviers_retour_autre_detail",
+      "verbatim"
+    ]
   };
 
+  // Segment values are only unique within a (type, audience) pair — e.g.
+  // "regulier" means "3+ achats" for acheteurs actifs but "achetait
+  // régulièrement" for acheteurs churn. Always resolve through this triple.
   var SEGMENT_LABELS = {
-    vendeurs: { actif: "Plusieurs ventes, dont récente", passe: "Dernière vente >1 an", occasionnel: "Une vente récente" },
-    acheteurs: { regulier: "3+ achats", occasionnel: "1-2 achats", non_acheteur: "Inscrit, aucun achat" }
-  };
-
-  var CHOICE_LABELS = {
-    vendeurs: {
-      catawiki: "Catawiki", bidspotter: "Bidspotter", surplex: "Surplex", troostwijk: "Troostwijk",
-      vente_directe: "Vente directe", autre: "Autre", non_uniquement_auctelia: "Non, uniquement Auctelia"
-    },
     acheteurs: {
-      prix_reserve_eleve: "Prix de réserve trop élevés", peu_de_lots: "Trop peu de lots dans ma catégorie",
-      logistique_compliquee: "Logistique d'enlèvement compliquée", concurrence_forte: "Concurrence trop forte",
-      frais_adjudication: "Frais d'adjudication", annulation_post_adjudication: "Risque d'annulation après adjudication",
-      prix_final_superieur_neuf: "Prix final > équivalent neuf",
-      rien_satisfait: "Rien, je suis satisfait", autre: "Autre"
+      actif: { regulier: "3+ achats", occasionnel: "1-2 achats" },
+      churn: { regulier: "Achetait régulièrement", occasionnel: "Achetait occasionnellement", une_fois: "Une seule fois" }
+    },
+    vendeurs: {
+      actif: { actif: "Plusieurs ventes", occasionnel: "Une seule vente" },
+      churn: { plusieurs: "Vendait plusieurs fois", occasionnelle: "Vente occasionnelle", une_seule: "Une seule vente au total" }
     }
   };
 
+  var FREINS_LABELS = {
+    prix_reserve_eleve: "Prix de réserve trop élevés", peu_de_lots: "Trop peu de lots dans ma catégorie",
+    logistique_compliquee: "Logistique d'enlèvement compliquée", concurrence_forte: "Concurrence trop forte",
+    frais_vente: "Frais de vente", annulation_post_adjudication: "Risque d'annuler la vente après avoir gagné l'enchère",
+    prix_final_superieur_neuf: "Prix final > équivalent neuf",
+    rien_satisfait: "Rien, je suis satisfait", autre: "Autre"
+  };
+  var RAISONS_ACHETEUR_LABELS = {
+    pas_de_lots: "Pas trouvé de lots intéressants",
+    reserve_non_atteinte: "Prix de réserve trop souvent hors budget/non atteints",
+    mauvaise_experience: "Mauvaise expérience (litige, annulation)",
+    qualite_interactions: "Qualité insuffisante des échanges avec le service client",
+    plus_besoin: "Plus besoin de ce type de matériel industriel",
+    alternative_trouvee: "Alternative trouvée",
+    aucune_raison: "Aucune raison particulière", autre: "Autre"
+  };
+  var RAISONS_VENDEUR_LABELS = {
+    prix_decevant: "Prix de vente final trop souvent décevant",
+    reserve_non_atteinte: "Prix de réserve trop souvent non atteint",
+    suivi_insatisfaisant: "Suivi insatisfaisant",
+    qualite_interactions: "Qualité insuffisante des échanges avec le service client",
+    mise_en_vente_compliquee: "Mise en vente trop compliquée",
+    alternative_trouvee: "Alternative trouvée (autre plateforme)",
+    plus_de_materiel: "Plus de matériel industriel à vendre actuellement",
+    aucune_raison: "Aucune raison particulière", autre: "Autre"
+  };
+  var LEVIERS_ACHETEUR_LABELS = {
+    plus_de_lots: "Plus de lots pertinents", reserve_realiste: "Prix de réserve plus réalistes",
+    meilleure_communication: "Meilleure communication sur les nouveaux lots", enlevement_simple: "Enlèvement plus simple",
+    frais_reduits: "Frais réduits", amelioration_service_client: "Amélioration du service client",
+    pas_de_retour: "Rien, je ne prévois pas de revenir", autre: "Autre"
+  };
+  var LEVIERS_VENDEUR_LABELS = {
+    reserve_realiste: "Prix de réserve plus réalistes", meilleur_accompagnement: "Meilleur accompagnement",
+    processus_simple: "Processus plus simple", plus_de_visibilite: "Plus de visibilité sur mes lots",
+    pas_de_retour: "Rien, je ne prévois pas de revendre", autre: "Autre"
+  };
+  var ORIGINE_LABELS = {
+    vendeur: "Fixé par le vendeur lui-même", recommandation: "Recommandé par Auctelia",
+    ca_depend: "Ça dépend des lots", ne_sait_pas: "Je ne sais pas"
+  };
+  var INTENTION_LABELS = {
+    certainement: "Oui, certainement", probablement: "Probablement", ne_sait_pas: "Je ne sais pas encore",
+    probablement_pas: "Probablement pas", non: "Non"
+  };
+  var FREQ_ACHETEUR_LABELS = { jamais: "Jamais", une_deux_fois: "Une ou deux fois", plusieurs_fois: "Plusieurs fois", ne_sait_pas: "Je ne sais pas" };
+  var FREQ_VENDEUR_LABELS = { jamais: "Jamais", parfois: "Parfois", souvent: "Souvent", ne_sait_pas: "Je ne sais pas" };
+
   var CSAT_QUESTIONS = {
     vendeurs: [
-      { field: "csat_prix", label: "Prix de vente obtenu" },
-      { field: "csat_suivi", label: "Suivi commercial" }
+      { field: "csat_prix", label: "Prix de vente obtenu", scale: 5 },
+      { field: "ces_facilite", label: "Facilité de mise en vente (1=difficile, 7=facile)", scale: 7 }
     ],
     acheteurs: [
-      { field: "csat_confiance", label: "Confiance / fiabilité" },
-      { field: "csat_descriptions", label: "Qualité des descriptions" }
+      { field: "csat_confiance", label: "Confiance / fiabilité", scale: 5 },
+      { field: "csat_descriptions", label: "Qualité des descriptions", scale: 5 },
+      { field: "ces_enlevement", label: "Facilité d'enlèvement (1=compliqué, 7=fluide)", scale: 7 }
     ]
   };
 
@@ -62,6 +125,7 @@
 
   var state = {
     type: "vendeurs",
+    audience: "actif",
     data: { vendeurs: [], acheteurs: [] },
     isMock: { vendeurs: true, acheteurs: true },
     charts: {},
@@ -104,11 +168,21 @@
      Init
   ------------------------------------------------------------------ */
   function init() {
-    document.querySelectorAll(".dash-type-switch button").forEach(function (btn) {
+    document.querySelectorAll("#type-switch button").forEach(function (btn) {
       btn.addEventListener("click", function () {
-        document.querySelectorAll(".dash-type-switch button").forEach(function (b) { b.classList.remove("active"); });
+        document.querySelectorAll("#type-switch button").forEach(function (b) { b.classList.remove("active"); });
         btn.classList.add("active");
         state.type = btn.dataset.type;
+        state.page = 1;
+        renderAll();
+      });
+    });
+
+    document.querySelectorAll("#audience-switch button").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        document.querySelectorAll("#audience-switch button").forEach(function (b) { b.classList.remove("active"); });
+        btn.classList.add("active");
+        state.audience = btn.dataset.audience;
         state.page = 1;
         renderAll();
       });
@@ -118,8 +192,8 @@
     document.getElementById("page-prev").addEventListener("click", function () { changePage(-1); });
     document.getElementById("page-next").addEventListener("click", function () { changePage(1); });
 
-    loadData("vendeurs").then(function () { renderIfCurrent("vendeurs"); });
-    loadData("acheteurs").then(function () { renderIfCurrent("acheteurs"); });
+    loadData("vendeurs").then(function () { renderIfCurrent("vendeurs"); renderSynthese(); });
+    loadData("acheteurs").then(function () { renderIfCurrent("acheteurs"); renderSynthese(); });
   }
 
   function renderIfCurrent(type) {
@@ -195,122 +269,200 @@
   }
 
   /* ------------------------------------------------------------------
-     Mock data generator (demo mode)
+     Mock data generator (demo mode) — each type mixes both audiences
+     (actif/churn) into one array, mirroring how they land in the same
+     Google Sheet tab in production (see COLUMNS above).
   ------------------------------------------------------------------ */
   var VERBATIMS_MOCK = {
-    vendeurs: {
-      promoter: [
-        "Un suivi impeccable, mon lot a été vendu au-dessus de mes attentes.",
-        "Processus simple et rapide, je recommande sans hésiter.",
-        "Bon accompagnement, je reviendrai pour ma prochaine vente."
-      ],
-      passive: [
-        "Correct dans l'ensemble mais le suivi pourrait être plus proactif.",
-        "Le prix obtenu était dans la moyenne, rien d'exceptionnel."
-      ],
-      detractor: [
-        "Prix final très en dessous de l'estimation initiale, déçu.",
-        "Peu de nouvelles pendant plusieurs semaines, manque de transparence.",
-        "Trop de frais cachés par rapport à ce qui avait été annoncé."
-      ]
+    "vendeurs-actif": {
+      promoter: ["Un suivi impeccable, mon lot a été vendu au-dessus de mes attentes.", "Processus simple et rapide, je recommande sans hésiter."],
+      passive: ["Correct dans l'ensemble mais le suivi pourrait être plus proactif.", "Le prix obtenu était dans la moyenne, rien d'exceptionnel."],
+      detractor: ["Mon interlocuteur m'a poussé à mettre une réserve trop haute, résultat : rien vendu.", "Prix final très en dessous de l'estimation initiale, déçu.", "Peu de nouvelles pendant plusieurs semaines, manque de transparence."]
     },
-    acheteurs: {
-      promoter: [
-        "Enlèvement simple et matériel conforme aux photos, très satisfait.",
-        "Bonne expérience globale, je continuerai à enchérir régulièrement."
-      ],
-      passive: [
-        "Ça se passe bien mais il manque de lots dans ma catégorie.",
-        "Descriptions correctes mais parfois un peu sommaires."
-      ],
-      detractor: [
-        "Matériel reçu en moins bon état que ce que montraient les photos.",
-        "Logistique d'enlèvement beaucoup trop compliquée pour un particulier.",
-        "Frais d'adjudication trop élevés par rapport à la valeur du lot."
-      ]
+    "vendeurs-churn": {
+      promoter: ["Je repartirais volontiers si l'accompagnement était plus personnalisé.", "Bonne expérience globale, j'attends d'avoir à nouveau du matériel industriel à vendre."],
+      passive: ["Plus rien à vendre pour le moment, mais rien de négatif à signaler.", "J'ai testé une autre plateforme en parallèle, sans vraie préférence."],
+      detractor: ["On m'a recommandé un prix de réserve qui n'a jamais été atteint sur mes 3 derniers lots, j'ai arrêté.", "Le suivi commercial a été quasi inexistant après la mise en vente.", "Trop de lots retirés faute d'enchérisseurs suffisants."]
+    },
+    "acheteurs-actif": {
+      promoter: ["Enlèvement simple et matériel industriel conforme aux photos, très satisfait.", "Bonne expérience globale, je continuerai à enchérir régulièrement."],
+      passive: ["Ça se passe bien mais plusieurs lots où j'ai enchéri sont finalement partis sans être vendus.", "Descriptions correctes mais parfois un peu sommaires."],
+      detractor: ["J'ai enchéri trois fois sur des lots qui ont fini par être retirés, c'est décourageant.", "Logistique d'enlèvement beaucoup trop compliquée pour un particulier.", "Prix de réserve totalement déconnectés du marché de l'occasion."]
+    },
+    "acheteurs-churn": {
+      promoter: ["Je reviendrais volontiers si de nouveaux lots intéressants arrivaient.", "Bonne plateforme dans l'ensemble, j'ai juste arrêté par manque de temps."],
+      passive: ["Plus grand-chose à acheter dans ma catégorie ces derniers mois.", "J'ai trouvé une alternative plus proche de chez moi."],
+      detractor: ["Trop de lots où la réserve n'était jamais atteinte, j'ai fini par arrêter d'essayer.", "Le service client n'a jamais vraiment répondu à mes questions, ça n'a pas aidé.", "Les prix de réserve me semblaient toujours hors budget."]
     }
   };
 
   function seededRandom(seed) {
     var s = seed;
-    return function () {
-      s = (s * 9301 + 49297) % 233280;
-      return s / 233280;
+    return function () { s = (s * 9301 + 49297) % 233280; return s / 233280; };
+  }
+
+  function weightedPick(rng, weights) {
+    var total = 0;
+    for (var i = 0; i < weights.length; i++) total += weights[i][1];
+    var r = rng() * total, acc = 0;
+    for (var j = 0; j < weights.length; j++) { acc += weights[j][1]; if (r <= acc) return weights[j][0]; }
+    return weights[weights.length - 1][0];
+  }
+
+  function pickMulti(rng, mainKey, mainBoost, pool, extraMin, extraMax) {
+    var picks = [];
+    if (mainKey && rng() < mainBoost) picks.push(mainKey);
+    var n = extraMin + Math.floor(rng() * (extraMax - extraMin + 1));
+    for (var k = 0; k < n; k++) picks.push(pool[Math.floor(rng() * pool.length)]);
+    return Array.from(new Set(picks));
+  }
+
+  function npsFromCategory(rng, cat) {
+    if (cat === "detractor") return Math.floor(rng() * 7);
+    if (cat === "passive") return 7 + Math.floor(rng() * 2);
+    return 9 + Math.floor(rng() * 2);
+  }
+
+  function scaleFromCategory(rng, cat, span) {
+    var base = cat === "promoter" ? (span === 5 ? 4 : 6) : (cat === "passive" ? (span === 5 ? 3 : 4) : 2);
+    return clamp(base + Math.round(rng() * 2) - 1, 1, span);
+  }
+
+  function pctBucket(rng, isChurn) {
+    var r = rng();
+    if (isChurn) { if (r < 0.55) return "detractor"; if (r < 0.75) return "passive"; return "promoter"; }
+    if (r < 0.32) return "detractor"; if (r < 0.55) return "passive"; return "promoter";
+  }
+
+  function baseMeta(rng, type, audience, now) {
+    return {
+      timestamp: new Date(now - Math.floor(rng() * 28) * 86400000 - Math.floor(rng() * 86400000)).toISOString(),
+      lang: rng() < 0.7 ? "fr" : "nl",
+      source: "mailchimp_" + type + (audience === "churn" ? "_relance" : ""),
+      user_agent: rng() < 0.4 ? "Mobile" : "Desktop",
+      survey_type: type,
+      audience: audience
     };
   }
 
-  function generateMockData(type) {
-    var rng = seededRandom(type === "vendeurs" ? 42 : 1337);
-    var n = 140;
+  function generateAcheteursRows(audience, count, now) {
+    var rng = seededRandom(audience === "churn" ? 7331 : 4242);
     var rows = [];
-    var segments = type === "vendeurs" ? ["actif", "passe", "occasionnel"] : ["regulier", "occasionnel", "non_acheteur"];
-    var choiceKeys = Object.keys(CHOICE_LABELS[type]);
-    var now = 1751500000000; // fixed reference timestamp (July 2025) to keep demo data stable
+    var segs = audience === "churn" ? ["regulier", "occasionnel", "une_fois"] : ["regulier", "occasionnel"];
+    var pool = VERBATIMS_MOCK["acheteurs-" + audience];
 
-    for (var i = 0; i < n; i++) {
-      var npsBucket = rng();
-      var nps;
-      if (npsBucket < 0.32) nps = Math.floor(rng() * 7); // detractor 0-6
-      else if (npsBucket < 0.55) nps = 7 + Math.floor(rng() * 2); // passive 7-8
-      else nps = 9 + Math.floor(rng() * 2); // promoter 9-10
+    for (var i = 0; i < count; i++) {
+      var cat = pctBucket(rng, audience === "churn");
+      var nps = npsFromCategory(rng, cat);
+      var freqW = cat === "promoter" ? [["jamais", 50], ["une_deux_fois", 32], ["plusieurs_fois", 10], ["ne_sait_pas", 8]]
+        : cat === "passive" ? [["jamais", 30], ["une_deux_fois", 35], ["plusieurs_fois", 25], ["ne_sait_pas", 10]]
+        : [["jamais", 15], ["une_deux_fois", 28], ["plusieurs_fois", 47], ["ne_sait_pas", 10]];
+      var freq = weightedPick(rng, freqW);
 
-      var category = nps <= 6 ? "detractor" : (nps <= 8 ? "passive" : "promoter");
-      var csatBase = category === "promoter" ? 4 : (category === "passive" ? 3 : 2);
-      var csat1 = clamp(csatBase + Math.round(rng() * 2) - 1, 1, 5);
-      var csat2 = clamp(csatBase + Math.round(rng() * 2) - 1, 1, 5);
-      // 7 = positive (facile/fluide), 1 = negative — same direction as NPS/CSAT.
-      var cesBase = category === "promoter" ? 6 : (category === "passive" ? 4 : 2);
-      var ces = clamp(cesBase + Math.round(rng() * 2) - 1, 1, 7);
+      var row = baseMeta(rng, "acheteurs", audience, now);
+      row.segment = segs[Math.floor(rng() * segs.length)];
+      row.nps = nps;
+      row.freq_reserve_non_atteinte = freq;
 
-      var numChoices = 1 + Math.floor(rng() * 2);
-      var choices = [];
-      for (var c = 0; c < numChoices; c++) {
-        choices.push(choiceKeys[Math.floor(rng() * choiceKeys.length)]);
-      }
-      choices = Array.from(new Set(choices));
-      var shownOrder = shuffleWithRng(choiceKeys.slice(), rng);
-
-      var pool = VERBATIMS_MOCK[type][category];
-      var hasVerbatim = rng() < 0.5;
-      var verbatim = hasVerbatim ? pool[Math.floor(rng() * pool.length)] : "";
-
-      var daysAgo = Math.floor(rng() * 28);
-      var ts = new Date(now - daysAgo * 86400000 - Math.floor(rng() * 86400000));
-
-      var row = {
-        timestamp: ts.toISOString(),
-        lang: rng() < 0.7 ? "fr" : "nl",
-        source: "mailchimp_" + type,
-        user_agent: rng() < 0.4 ? "Mobile" : "Desktop",
-        survey_type: type,
-        segment: segments[Math.floor(rng() * segments.length)],
-        nps: nps,
-        verbatim: verbatim
-      };
-
-      if (type === "vendeurs") {
-        row.csat_prix = csat1;
-        row.csat_suivi = csat2;
-        row.ces_facilite = ces;
-        row.concurrence = choices.join(", ");
-        row.concurrence_order = shownOrder.join(", ");
-        var intentions = ["certainement", "probablement", "ne_sait_pas", "probablement_pas", "non"];
-        row.intention_retour = intentions[category === "promoter" ? Math.floor(rng() * 2) : (category === "passive" ? 2 : 3 + Math.floor(rng() * 2))];
+      if (audience === "actif") {
+        row.csat_confiance = scaleFromCategory(rng, cat, 5);
+        row.csat_descriptions = scaleFromCategory(rng, cat, 5);
+        row.ces_enlevement = scaleFromCategory(rng, cat, 7);
+        var freinsPool = Object.keys(FREINS_LABELS).filter(function (k) { return k !== "prix_reserve_eleve"; });
+        var reserveBoost = freq === "plusieurs_fois" ? 0.68 : (freq === "une_deux_fois" ? 0.32 : 0.12);
+        var freins = pickMulti(rng, "prix_reserve_eleve", reserveBoost, freinsPool, 1, 2);
+        row.freins = freins.join(", ");
+        row.freins_order = shuffleWithRng(Object.keys(FREINS_LABELS).slice(), rng).join(", ");
       } else {
-        row.csat_confiance = csat1;
-        // Q4/Q5 are skipped in the real form for "non_acheteur" — mirror
-        // that here so the dashboard's blank-value handling gets exercised.
-        row.csat_descriptions = row.segment === "non_acheteur" ? "" : csat2;
-        row.ces_enlevement = row.segment === "non_acheteur" ? "" : ces;
-        row.freins = choices.join(", ");
-        row.freins_order = shownOrder.join(", ");
-        var devices = ["ordinateur", "smartphone", "les_deux"];
-        row.usage_mobile = devices[Math.floor(rng() * devices.length)];
+        var interactionsBoost = cat === "detractor" ? 0.3 : 0.1;
+        var raisonPool = Object.keys(RAISONS_ACHETEUR_LABELS).filter(function (k) { return k !== "reserve_non_atteinte" && k !== "qualite_interactions"; });
+        var raisons = [];
+        if (rng() < (freq === "plusieurs_fois" ? 0.55 : 0.18)) raisons.push("reserve_non_atteinte");
+        if (rng() < interactionsBoost) raisons.push("qualite_interactions");
+        var extraN = 1 + Math.floor(rng() * 2);
+        for (var r2 = 0; r2 < extraN; r2++) raisons.push(raisonPool[Math.floor(rng() * raisonPool.length)]);
+        row.raisons_arret = Array.from(new Set(raisons)).join(", ");
+        row.raisons_arret_order = shuffleWithRng(Object.keys(RAISONS_ACHETEUR_LABELS).slice(), rng).join(", ");
+
+        var levBoost = freq === "plusieurs_fois" ? 0.6 : 0.25;
+        var levPool = Object.keys(LEVIERS_ACHETEUR_LABELS).filter(function (k) { return k !== "reserve_realiste"; });
+        row.leviers_retour = pickMulti(rng, "reserve_realiste", levBoost, levPool, 1, 2).join(", ");
+        row.leviers_retour_order = shuffleWithRng(Object.keys(LEVIERS_ACHETEUR_LABELS).slice(), rng).join(", ");
       }
 
+      var pickCat = pool[cat] || pool.passive;
+      row.verbatim = rng() < 0.45 ? pickCat[Math.floor(rng() * pickCat.length)] : "";
       rows.push(row);
     }
+    return rows;
+  }
 
+  function generateVendeursRows(audience, count, now) {
+    var rng = seededRandom(audience === "churn" ? 9001 : 1917);
+    var rows = [];
+    var segs = audience === "churn" ? ["plusieurs", "occasionnelle", "une_seule"] : ["actif", "occasionnel"];
+    var pool = VERBATIMS_MOCK["vendeurs-" + audience];
+
+    for (var i = 0; i < count; i++) {
+      var aMisReserve = weightedPick(rng, [["oui", 76], ["non", 24]]);
+      var origine = "", freq = "";
+      if (aMisReserve === "oui") {
+        origine = weightedPick(rng, [["vendeur", 44], ["recommandation", 38], ["ca_depend", 12], ["ne_sait_pas", 6]]);
+        if (origine === "recommandation") freq = weightedPick(rng, [["souvent", 38], ["parfois", 35], ["jamais", 17], ["ne_sait_pas", 10]]);
+        else if (origine === "vendeur") freq = weightedPick(rng, [["souvent", 14], ["parfois", 30], ["jamais", 46], ["ne_sait_pas", 10]]);
+        else freq = weightedPick(rng, [["souvent", 20], ["parfois", 30], ["jamais", 35], ["ne_sait_pas", 15]]);
+      }
+
+      var catW = freq === "souvent" ? [["detractor", 60], ["passive", 25], ["promoter", 15]]
+        : freq === "parfois" ? [["detractor", 35], ["passive", 35], ["promoter", 30]]
+        : freq === "jamais" ? [["detractor", 15], ["passive", 25], ["promoter", 60]]
+        : [["detractor", 30], ["passive", 40], ["promoter", 30]];
+      var cat = weightedPick(rng, catW);
+      var nps = npsFromCategory(rng, cat);
+
+      var row = baseMeta(rng, "vendeurs", audience, now);
+      row.segment = segs[Math.floor(rng() * segs.length)];
+      row.nps = nps;
+      row.a_mis_reserve = aMisReserve;
+      row.origine_prix_reserve = origine;
+      row.freq_reserve_non_atteinte = freq;
+
+      if (audience === "actif") {
+        row.csat_prix = scaleFromCategory(rng, cat, 5);
+        row.ces_facilite = scaleFromCategory(rng, cat, 7);
+        var intentW = cat === "promoter" ? [["certainement", 55], ["probablement", 35], ["ne_sait_pas", 7], ["probablement_pas", 2], ["non", 1]]
+          : cat === "passive" ? [["certainement", 10], ["probablement", 30], ["ne_sait_pas", 40], ["probablement_pas", 15], ["non", 5]]
+          : [["certainement", 3], ["probablement", 7], ["ne_sait_pas", 20], ["probablement_pas", 35], ["non", 35]];
+        row.intention_retour = weightedPick(rng, intentW);
+      } else {
+        var interactionsBoost = cat === "detractor" ? 0.28 : 0.1;
+        var raisonPool = Object.keys(RAISONS_VENDEUR_LABELS).filter(function (k) { return k !== "reserve_non_atteinte" && k !== "qualite_interactions"; });
+        var raisons = [];
+        if (rng() < (freq === "souvent" ? 0.5 : 0.14)) raisons.push("reserve_non_atteinte");
+        if (rng() < interactionsBoost) raisons.push("qualite_interactions");
+        var extraN2 = 1 + Math.floor(rng() * 2);
+        for (var r3 = 0; r3 < extraN2; r3++) raisons.push(raisonPool[Math.floor(rng() * raisonPool.length)]);
+        row.raisons_arret = Array.from(new Set(raisons)).join(", ");
+        row.raisons_arret_order = shuffleWithRng(Object.keys(RAISONS_VENDEUR_LABELS).slice(), rng).join(", ");
+
+        var levBoost2 = freq === "souvent" ? 0.55 : 0.22;
+        var levPool2 = Object.keys(LEVIERS_VENDEUR_LABELS).filter(function (k) { return k !== "reserve_realiste"; });
+        row.leviers_retour = pickMulti(rng, "reserve_realiste", levBoost2, levPool2, 1, 2).join(", ");
+        row.leviers_retour_order = shuffleWithRng(Object.keys(LEVIERS_VENDEUR_LABELS).slice(), rng).join(", ");
+      }
+
+      var pickCat = pool[cat] || pool.passive;
+      row.verbatim = rng() < 0.45 ? pickCat[Math.floor(rng() * pickCat.length)] : "";
+      rows.push(row);
+    }
+    return rows;
+  }
+
+  function generateMockData(type) {
+    var now = 1751500000000; // fixed reference timestamp, keeps demo data stable across reloads
+    var rows = type === "vendeurs"
+      ? generateVendeursRows("actif", 95, now).concat(generateVendeursRows("churn", 45, now))
+      : generateAcheteursRows("actif", 95, now).concat(generateAcheteursRows("churn", 45, now));
     rows.sort(function (a, b) { return new Date(b.timestamp) - new Date(a.timestamp); });
     return rows;
   }
@@ -338,9 +490,6 @@
   }
 
   function average(rows, field) {
-    // Skipped questions (e.g. csat_descriptions/ces_enlevement for
-    // non_acheteur) store "" — exclude those rather than let Number("")
-    // silently coerce to 0 and drag the average down.
     var vals = rows
       .map(function (r) { return r[field]; })
       .filter(function (v) { return v !== undefined && v !== null && v !== ""; })
@@ -348,6 +497,30 @@
       .filter(function (v) { return !isNaN(v); });
     if (!vals.length) return 0;
     return vals.reduce(function (a, b) { return a + b; }, 0) / vals.length;
+  }
+
+  // Multi-select fields (freins, raisons_arret, leviers_retour) are stored
+  // as a comma-joined string in the sheet — split before tallying/reading.
+  function splitMulti(val) {
+    return (val || "").split(",").map(function (s) { return s.trim(); }).filter(Boolean);
+  }
+
+  function tally(rows, field, isMulti) {
+    var t = {};
+    rows.forEach(function (r) {
+      var v = r[field];
+      if (v === undefined || v === "" || v === null) return;
+      var vals = isMulti ? splitMulti(v) : [v];
+      vals.forEach(function (x) { t[x] = (t[x] || 0) + 1; });
+    });
+    return t;
+  }
+
+  function topKeyOf(t) {
+    var keys = Object.keys(t);
+    if (!keys.length) return null;
+    keys.sort(function (a, b) { return t[b] - t[a]; });
+    return keys[0];
   }
 
   function splitByRecency(rows) {
@@ -363,15 +536,95 @@
     return { recent: recent, prior: prior };
   }
 
+  function filterByAudience(rows, audience) {
+    return rows.filter(function (r) { return r.audience === audience; });
+  }
+
+  // Vendeurs only: origine/fréquence de réserve ne concernent que ceux qui
+  // ont effectivement mis un prix de réserve (a_mis_reserve === "oui").
+  function reserveSubset(rows, type) {
+    if (type !== "vendeurs") return rows;
+    return rows.filter(function (r) { return r.a_mis_reserve === "oui"; });
+  }
+
+  /* ------------------------------------------------------------------
+     Bloc 0 — Synthèse comparative (les 4 segments, indépendante du filtre)
+  ------------------------------------------------------------------ */
+  var VARIANT_ORDER = [
+    { type: "acheteurs", audience: "actif", label: "Acheteurs", aud: "Actifs" },
+    { type: "acheteurs", audience: "churn", label: "Acheteurs", aud: "Churn" },
+    { type: "vendeurs", audience: "actif", label: "Vendeurs", aud: "Actifs" },
+    { type: "vendeurs", audience: "churn", label: "Vendeurs", aud: "Churn" }
+  ];
+
+  function computeSummaryRow(type, audience) {
+    var rows = filterByAudience(state.data[type], audience);
+    var isVendeur = type === "vendeurs";
+    var isChurn = audience === "churn";
+    var nps = computeNps(rows);
+    var reserveRows = reserveSubset(rows, type);
+    var freqHighKey = isVendeur ? "souvent" : "plusieurs_fois";
+    var freqTally = tally(reserveRows, "freq_reserve_non_atteinte", false);
+    var freqPct = reserveRows.length ? Math.round(((freqTally[freqHighKey] || 0) / reserveRows.length) * 100) : 0;
+
+    var topLabel = "—", topPct = 0;
+    if (!isChurn && !isVendeur) {
+      var t1 = tally(rows, "freins", true), k1 = topKeyOf(t1);
+      topLabel = FREINS_LABELS[k1] || "—"; topPct = k1 && rows.length ? Math.round((t1[k1] / rows.length) * 100) : 0;
+    } else if (!isChurn && isVendeur) {
+      var t2 = tally(reserveRows, "origine_prix_reserve", false), k2 = topKeyOf(t2);
+      topLabel = ORIGINE_LABELS[k2] || "—"; topPct = k2 && reserveRows.length ? Math.round((t2[k2] / reserveRows.length) * 100) : 0;
+    } else if (isChurn && !isVendeur) {
+      var t3 = tally(rows, "raisons_arret", true), k3 = topKeyOf(t3);
+      topLabel = RAISONS_ACHETEUR_LABELS[k3] || "—"; topPct = k3 && rows.length ? Math.round((t3[k3] / rows.length) * 100) : 0;
+    } else {
+      var t4 = tally(rows, "raisons_arret", true), k4 = topKeyOf(t4);
+      topLabel = RAISONS_VENDEUR_LABELS[k4] || "—"; topPct = k4 && rows.length ? Math.round((t4[k4] / rows.length) * 100) : 0;
+    }
+    return { n: rows.length, nps: nps.score, freqPct: freqPct, topLabel: topLabel, topPct: topPct };
+  }
+
+  function renderSynthese() {
+    var body = document.getElementById("synth-body");
+    if (!body) return;
+    body.innerHTML = VARIANT_ORDER.map(function (v) {
+      var s = computeSummaryRow(v.type, v.audience);
+      var npsColor = thermoColor(s.nps, -100, 100);
+      var freqColor = thermoColorInverse(s.freqPct / 100);
+      var isCurrent = v.type === state.type && v.audience === state.audience;
+      return '<tr class="' + (isCurrent ? "current" : "") + '" data-type="' + v.type + '" data-audience="' + v.audience + '">' +
+        '<td><span class="synth-variant">' + v.label + '<span class="aud">' + v.aud + '</span></span></td>' +
+        '<td class="synth-num">' + s.n + '</td>' +
+        '<td><span class="synth-pill" style="background:' + npsColor + '1A; color:' + npsColor + ';">' + (s.nps > 0 ? "+" : "") + s.nps + '</span></td>' +
+        '<td><span class="synth-pill" style="background:' + freqColor + '1A; color:' + freqColor + ';">' + s.freqPct + ' %</span></td>' +
+        '<td style="font-size:0.85rem; color:var(--au-ink2);">' + escapeHtml(s.topLabel) + ' <span style="color:var(--au-ink3);">(' + s.topPct + ' %)</span></td>' +
+        "</tr>";
+    }).join("");
+    body.querySelectorAll("tr").forEach(function (tr) {
+      tr.addEventListener("click", function () {
+        state.type = tr.dataset.type;
+        state.audience = tr.dataset.audience;
+        document.querySelectorAll("#type-switch button").forEach(function (b) { b.classList.toggle("active", b.dataset.type === state.type); });
+        document.querySelectorAll("#audience-switch button").forEach(function (b) { b.classList.toggle("active", b.dataset.audience === state.audience); });
+        state.page = 1;
+        renderAll();
+      });
+    });
+  }
+
   /* ------------------------------------------------------------------
      Render orchestration
   ------------------------------------------------------------------ */
   function renderAll() {
     var type = state.type;
-    var rows = state.data[type];
+    var audience = state.audience;
+    var isVendeur = type === "vendeurs";
+    var isChurn = audience === "churn";
+    var rows = filterByAudience(state.data[type], audience);
+    var reserveRows = reserveSubset(rows, type);
 
-    document.getElementById("header-type-label").textContent = type === "vendeurs" ? "Vendeurs" : "Acheteurs";
-    document.getElementById("choices-title").textContent = type === "vendeurs" ? "Concurrence" : "Freins & concurrence";
+    document.getElementById("header-type-label").textContent =
+      (isVendeur ? "Vendeurs" : "Acheteurs") + " · " + (isChurn ? "Churn" : "Actifs");
     document.getElementById("mock-banner").style.display = state.isMock[type] ? "block" : "none";
 
     var lastDate = rows.length ? new Date(Math.max.apply(null, rows.map(function (r) { return new Date(r.timestamp).getTime(); }))) : null;
@@ -379,13 +632,22 @@
       ? rows.length + " réponses · dernière réponse le " + formatDate(lastDate)
       : "Aucune réponse pour le moment";
 
-    renderKpis(rows, type);
+    renderSynthese();
+    renderKpis(rows, reserveRows, type, isChurn);
+    renderReserve(rows, reserveRows, type, isVendeur);
+    renderChoicesSection(rows, type, isChurn, isVendeur);
     safeRender(renderNpsDistribution, rows);
-    safeRender(renderSegments, rows, type);
-    safeRender(renderCsatCharts, rows, type);
-    safeRender(renderChoicesChart, rows, type);
-    renderChoicesNpsCorrelation(rows, type);
-    renderVerbatims(rows, type);
+    safeRender(renderSegments, rows, type, audience);
+
+    var csatSection = document.getElementById("section-csat");
+    if (isChurn) {
+      csatSection.style.display = "none";
+    } else {
+      csatSection.style.display = "block";
+      safeRender(renderCsatCharts, rows, type);
+    }
+
+    renderVerbatims(rows, type, audience);
     state.page = 1;
     renderRawTable(rows, type);
   }
@@ -393,13 +655,14 @@
   // Charts are a CDN-loaded enhancement — a slow/blocked CDN must never
   // prevent the KPI, verbatim, or raw-data blocks (which don't need Chart.js)
   // from rendering.
-  function safeRender(fn, rows, type) {
+  function safeRender(fn) {
     if (typeof Chart === "undefined") {
       console.error("[dashboard] Chart.js failed to load — charts skipped, other blocks still render.");
       return;
     }
+    var args = Array.prototype.slice.call(arguments, 1);
     try {
-      fn(rows, type);
+      fn.apply(null, args);
     } catch (err) {
       console.error("[dashboard] Chart render failed:", err);
     }
@@ -413,24 +676,14 @@
   /* ------------------------------------------------------------------
      Bloc 1 — KPIs
   ------------------------------------------------------------------ */
-  function renderKpis(rows, type) {
+  function renderKpis(rows, reserveRows, type, isChurn) {
     var grid = document.getElementById("kpi-grid");
     grid.innerHTML = "";
     grid.className = "dash-kpi-grid";
 
     var nps = computeNps(rows);
-    var csatField = CSAT_QUESTIONS[type][0].field;
-    var csatAvg = average(rows, csatField);
-    var cesField = type === "vendeurs" ? "ces_facilite" : "ces_enlevement";
-    var cesAvg = average(rows, cesField);
-
     var split = splitByRecency(rows);
-    var npsDelta = null, csatDelta = null, cesDelta = null;
-    if (split) {
-      npsDelta = nps.score - computeNps(split.prior).score;
-      csatDelta = average(split.recent, csatField) - average(split.prior, csatField);
-      cesDelta = average(split.recent, cesField) - average(split.prior, cesField);
-    }
+    var npsDelta = split ? nps.score - computeNps(split.prior).score : null;
 
     grid.appendChild(kpiCard({
       label: "NPS",
@@ -440,20 +693,49 @@
       thermo: { pct: (nps.score + 100) / 2, color: thermoColor(nps.score, -100, 100) }
     }));
 
-    grid.appendChild(kpiCard({
-      label: "CSAT — " + CSAT_QUESTIONS[type][0].label,
-      value: rows.length ? csatAvg.toFixed(1) + " / 5" : "—",
-      sub: "Moyenne sur " + rows.length + " réponses",
-      delta: csatDelta,
-      thermo: { pct: (csatAvg / 5) * 100, color: thermoColor(csatAvg, 1, 5) }
-    }));
+    if (!isChurn) {
+      var csatField = CSAT_QUESTIONS[type][0].field;
+      var csatAvg = average(rows, csatField);
+      var csatDelta = split ? average(split.recent, csatField) - average(split.prior, csatField) : null;
+      grid.appendChild(kpiCard({
+        label: "CSAT — " + CSAT_QUESTIONS[type][0].label,
+        value: rows.length ? csatAvg.toFixed(1) + " / 5" : "—",
+        sub: "Moyenne sur " + rows.length + " réponses",
+        delta: csatDelta,
+        thermo: { pct: (csatAvg / 5) * 100, color: thermoColor(csatAvg, 1, 5) }
+      }));
+    } else {
+      var raisonLabels = type === "vendeurs" ? RAISONS_VENDEUR_LABELS : RAISONS_ACHETEUR_LABELS;
+      var raisonTally = tally(rows, "raisons_arret", true);
+      var topKey = topKeyOf(raisonTally);
+      var topPct = topKey && rows.length ? Math.round((raisonTally[topKey] / rows.length) * 100) : 0;
+      grid.appendChild(kpiCard({
+        label: "Raison la plus citée",
+        value: topPct + " %",
+        sub: raisonLabels[topKey] || "—",
+        delta: null,
+        thermo: { pct: topPct, color: thermoColorInverse(topPct / 100) }
+      }));
+    }
 
+    var freqHighKey = type === "vendeurs" ? "souvent" : "plusieurs_fois";
+    var freqTally = tally(reserveRows, "freq_reserve_non_atteinte", false);
+    var freqBase = reserveRows.length || 1;
+    var freqPct = Math.round(((freqTally[freqHighKey] || 0) / freqBase) * 100);
+    var freqSplit = splitByRecency(reserveRows);
+    var freqDelta = null;
+    if (freqSplit) {
+      var recentPct = Math.round(((tally(freqSplit.recent, "freq_reserve_non_atteinte", false)[freqHighKey] || 0) / freqSplit.recent.length) * 100);
+      var priorPct = Math.round(((tally(freqSplit.prior, "freq_reserve_non_atteinte", false)[freqHighKey] || 0) / freqSplit.prior.length) * 100);
+      freqDelta = recentPct - priorPct;
+    }
     grid.appendChild(kpiCard({
-      label: "CES — Effort",
-      value: rows.length ? cesAvg.toFixed(1) + " / 7" : "—",
-      sub: "1 = difficile/compliqué · 7 = facile/fluide",
-      delta: cesDelta,
-      thermo: { pct: (cesAvg / 7) * 100, color: thermoColor(cesAvg, 1, 7) }
+      label: "Réserve non atteinte — " + (type === "vendeurs" ? "souvent" : "plusieurs fois"),
+      value: freqPct + " %",
+      sub: type === "vendeurs" ? "Part des vendeurs ayant mis une réserve" : "Part des répondants concernés",
+      delta: freqDelta,
+      deltaInverse: true,
+      thermo: { pct: freqPct, color: thermoColorInverse(freqPct / 100) }
     }));
   }
 
@@ -464,14 +746,23 @@
     return GREEN;
   }
 
+  // Inverted semantics for "bad rate" metrics (reserve failure %, top
+  // churn reason %) where a HIGHER value is worse, not better.
+  function thermoColorInverse(pct) {
+    if (pct > 0.35) return RED;
+    if (pct > 0.2) return GOLD;
+    return GREEN;
+  }
+
   function kpiCard(opts) {
     var card = document.createElement("div");
     card.className = "dash-kpi-card";
     var deltaHtml = "";
     if (opts.delta !== null && opts.delta !== undefined && !isNaN(opts.delta)) {
       var positive = opts.deltaInverse ? opts.delta < 0 : opts.delta > 0;
-      var arrow = opts.delta === 0 ? "→" : (positive ? "↑" : "↓");
-      var cls = opts.delta === 0 ? "" : (positive ? "up" : "down");
+      var flat = Math.abs(opts.delta) < 0.5;
+      var arrow = flat ? "→" : (positive ? "↑" : "↓");
+      var cls = flat ? "" : (positive ? "up" : "down");
       deltaHtml = ' <span class="dash-kpi-delta ' + cls + '">' + arrow + " " + Math.abs(opts.delta).toFixed(1) + " vs sem. préc.</span>";
     }
     card.innerHTML =
@@ -483,7 +774,227 @@
   }
 
   /* ------------------------------------------------------------------
-     Bloc 2 — NPS distribution
+     Bloc 2 — Prix de réserve (hand-rolled bars, not Chart.js — needs
+     per-bar severity color and a side-by-side origine × fréquence
+     comparison that a generic dataset can't express cleanly).
+  ------------------------------------------------------------------ */
+  function barRow(label, count, max, color) {
+    var pct = max > 0 ? (count / max) * 100 : 0;
+    return '<div class="bar-row"><div class="bl">' + escapeHtml(label) + '</div><div class="bt"><div class="fill" style="width:' + pct + '%; background:' + color + ';"></div></div><div class="bc">' + count + "</div></div>";
+  }
+
+  function renderReserve(rows, reserveRows, type, isVendeur) {
+    var freqLabels = isVendeur ? FREQ_VENDEUR_LABELS : FREQ_ACHETEUR_LABELS;
+    var freqKeys = isVendeur ? ["jamais", "parfois", "souvent", "ne_sait_pas"] : ["jamais", "une_deux_fois", "plusieurs_fois", "ne_sait_pas"];
+
+    document.getElementById("reserve-sub").textContent = isVendeur
+      ? "Fréquence déclarée à laquelle le prix de réserve fixé n'a pas été atteint sur les derniers lots — uniquement parmi ceux qui ont mis une réserve."
+      : "Fréquence déclarée d'enchères placées sur un lot finalement retiré, faute d'avoir atteint la réserve.";
+
+    var freqTally = tally(reserveRows, "freq_reserve_non_atteinte", false);
+    var freqMax = Math.max.apply(null, freqKeys.map(function (k) { return freqTally[k] || 0; }).concat([1]));
+    document.getElementById("reserve-dist").innerHTML = freqKeys.map(function (k) {
+      var c = freqTally[k] || 0;
+      var color = (k === "plusieurs_fois" || k === "souvent") ? RED : (k === "une_deux_fois" || k === "parfois") ? GOLD : (k === "jamais" ? GREEN : INK3);
+      return barRow(freqLabels[k], c, freqMax, color);
+    }).join("");
+
+    document.getElementById("reserve-note").textContent = isVendeur
+      ? Math.round((reserveRows.length / (rows.length || 1)) * 100) + " % des répondants (" + reserveRows.length + "/" + rows.length + ") ont mis un prix de réserve — le croisement ci-dessous ne porte que sur eux."
+      : "";
+
+    var crossCard = document.getElementById("reserve-cross-card");
+    if (isVendeur) {
+      crossCard.style.display = "block";
+      var origVendeur = reserveRows.filter(function (r) { return r.origine_prix_reserve === "vendeur"; });
+      var origReco = reserveRows.filter(function (r) { return r.origine_prix_reserve === "recommandation"; });
+      var pctVendeur = origVendeur.length ? Math.round((origVendeur.filter(function (r) { return r.freq_reserve_non_atteinte === "souvent"; }).length / origVendeur.length) * 100) : 0;
+      var pctReco = origReco.length ? Math.round((origReco.filter(function (r) { return r.freq_reserve_non_atteinte === "souvent"; }).length / origReco.length) * 100) : 0;
+      var crossMax = Math.max(pctVendeur, pctReco, 10);
+      document.getElementById("reserve-cross").innerHTML =
+        '<div class="cross-item"><div class="cross-label"><strong>Fixé par le vendeur lui-même</strong><span>' + origVendeur.length + ' réponses</span></div><div class="cross-bar"><div class="fill" style="width:' + (pctVendeur / crossMax * 100) + "%; background:" + GREEN + ';">' + pctVendeur + '%</div></div></div>' +
+        '<div class="cross-item"><div class="cross-label"><strong>Recommandé par Auctelia</strong><span>' + origReco.length + ' réponses</span></div><div class="cross-bar"><div class="fill" style="width:' + (pctReco / crossMax * 100) + "%; background:" + RED + ';">' + pctReco + "%</div></div></div>";
+
+      var insight = document.getElementById("reserve-insight");
+      if (origVendeur.length >= 5 && origReco.length >= 5) {
+        var delta = pctReco - pctVendeur;
+        insight.style.display = "flex";
+        document.getElementById("reserve-insight-text").innerHTML =
+          "Écart de <strong>" + Math.abs(delta) + " points</strong> entre une réserve recommandée par Auctelia et une réserve fixée par le vendeur lui-même — la réserve recommandée rate " +
+          (delta > 0 ? "plus souvent" : "moins souvent") + ".";
+      } else {
+        insight.style.display = "none";
+      }
+    } else {
+      crossCard.style.display = "none";
+    }
+  }
+
+  /* ------------------------------------------------------------------
+     Bloc 3 — Freins / raisons / leviers (choix multiple + corrélation)
+  ------------------------------------------------------------------ */
+  function getChoicesConfig(type, isChurn) {
+    if (type === "acheteurs" && !isChurn) {
+      return { title: "Freins à enchérir davantage", sub: "", field: "freins", isMulti: true, labelsMap: FREINS_LABELS, highlight: ["prix_reserve_eleve"], correlate: true, secondary: null };
+    }
+    if (type === "acheteurs" && isChurn) {
+      return {
+        title: "Raisons de l'arrêt", sub: "Sélection multiple — un répondant peut citer plusieurs raisons à la fois.",
+        field: "raisons_arret", isMulti: true, labelsMap: RAISONS_ACHETEUR_LABELS, highlight: ["reserve_non_atteinte", "qualite_interactions"], correlate: true,
+        secondary: { title: "Ce qui ferait reconsidérer Auctelia", field: "leviers_retour", isMulti: true, labelsMap: LEVIERS_ACHETEUR_LABELS }
+      };
+    }
+    if (type === "vendeurs" && !isChurn) {
+      return { title: "Intention de revente", sub: "", field: "intention_retour", isMulti: false, labelsMap: INTENTION_LABELS, highlight: [], correlate: false, secondary: null };
+    }
+    return {
+      title: "Raisons de l'arrêt", sub: "Sélection multiple — un répondant peut citer plusieurs raisons à la fois.",
+      field: "raisons_arret", isMulti: true, labelsMap: RAISONS_VENDEUR_LABELS, highlight: ["reserve_non_atteinte", "qualite_interactions"], correlate: true,
+      secondary: { title: "Ce qui ferait remettre du matériel industriel en vente", field: "leviers_retour", isMulti: true, labelsMap: LEVIERS_VENDEUR_LABELS }
+    };
+  }
+
+  function renderChoicesSection(rows, type, isChurn, isVendeur) {
+    var cfg = getChoicesConfig(type, isChurn);
+    document.getElementById("choices-title").textContent = cfg.title;
+    document.getElementById("choices-sub").textContent = cfg.sub;
+
+    safeRender(renderChoicesChart, rows, cfg);
+
+    var corrCard = document.getElementById("choices-correlation").parentElement;
+    var insight = document.getElementById("choices-insight");
+    if (cfg.correlate) {
+      corrCard.style.display = "block";
+      renderChoicesNpsCorrelation(rows, cfg);
+      showCorrInsight(rows, cfg, insight);
+    } else {
+      corrCard.style.display = "none";
+      insight.style.display = "none";
+    }
+
+    var block2 = document.getElementById("choices-block-2");
+    if (cfg.secondary) {
+      block2.style.display = "block";
+      document.getElementById("choices-title-2").textContent = cfg.secondary.title;
+      safeRender(renderChoicesChart2, rows, cfg.secondary);
+    } else {
+      block2.style.display = "none";
+    }
+  }
+
+  function renderChoicesChart(rows, cfg) {
+    var t = tally(rows, cfg.field, cfg.isMulti);
+    var entries = Object.keys(t).map(function (k) { return { key: k, label: cfg.labelsMap[k] || k, count: t[k] }; });
+    entries.sort(function (a, b) { return b.count - a.count; });
+
+    destroyChart("choices");
+    state.charts["choices"] = new Chart(document.getElementById("chart-choices"), {
+      type: "bar",
+      data: {
+        labels: entries.map(function (e) { return e.label; }),
+        datasets: [{
+          data: entries.map(function (e) { return e.count; }),
+          backgroundColor: entries.map(function (e) { return cfg.highlight.indexOf(e.key) !== -1 ? GOLD : DARK; }),
+          borderRadius: 4, maxBarThickness: 28
+        }]
+      },
+      options: {
+        indexAxis: "y",
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: { x: { beginAtZero: true, ticks: { precision: 0 }, grid: { display: false } }, y: { grid: { display: false } } }
+      }
+    });
+  }
+
+  function renderChoicesChart2(rows, cfg2) {
+    var t = tally(rows, cfg2.field, cfg2.isMulti);
+    var entries = Object.keys(t).map(function (k) { return { key: k, label: cfg2.labelsMap[k] || k, count: t[k] }; });
+    entries.sort(function (a, b) { return b.count - a.count; });
+
+    destroyChart("choices-2");
+    state.charts["choices-2"] = new Chart(document.getElementById("chart-choices-2"), {
+      type: "bar",
+      data: {
+        labels: entries.map(function (e) { return e.label; }),
+        datasets: [{ data: entries.map(function (e) { return e.count; }), backgroundColor: GOLD, borderRadius: 4, maxBarThickness: 26 }]
+      },
+      options: {
+        indexAxis: "y",
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: { x: { beginAtZero: true, ticks: { precision: 0 }, grid: { display: false } }, y: { grid: { display: false } } }
+      }
+    });
+  }
+
+  // Objectifies how much each cited item actually correlates with loyalty,
+  // computed after the fact from independent answers (NPS vs. checkbox)
+  // rather than asked directly — avoids leading respondents toward a
+  // causal link the questions never suggested.
+  function renderChoicesNpsCorrelation(rows, cfg) {
+    var wrap = document.getElementById("choices-correlation");
+    if (!wrap) return;
+
+    var overallAvg = average(rows, "nps");
+    var byKey = {};
+    rows.forEach(function (r) {
+      var v = r[cfg.field];
+      if (v === undefined || v === "" || v === null) return;
+      var vals = cfg.isMulti ? splitMulti(v) : [v];
+      vals.forEach(function (k) { if (!byKey[k]) byKey[k] = []; byKey[k].push(r.nps); });
+    });
+
+    var entries = Object.keys(byKey)
+      .filter(function (k) { return byKey[k].length >= 5; })
+      .map(function (k) {
+        var vals = byKey[k];
+        var avg = vals.reduce(function (a, b) { return a + b; }, 0) / vals.length;
+        return { label: cfg.labelsMap[k] || k, count: vals.length, avg: avg, delta: avg - overallAvg };
+      });
+
+    entries.sort(function (a, b) { return a.delta - b.delta; });
+
+    if (!entries.length) {
+      wrap.innerHTML = '<p style="color:var(--au-ink3); font-size:0.85rem;">Pas encore assez de réponses par item pour calculer une corrélation fiable (minimum 5 par item).</p>';
+      return;
+    }
+
+    wrap.innerHTML =
+      '<div style="font-size:0.8rem; color:var(--au-ink3); margin-bottom:10px;">NPS moyen des répondants ayant cité chaque item, comparé au NPS moyen global (' + overallAvg.toFixed(1) + ') — calculé après coup, pas suggéré par la question.</div>' +
+      entries.map(function (e) {
+        var color = e.delta <= -8 ? RED : (e.delta >= 8 ? GREEN : INK3);
+        var sign = e.delta > 0 ? "+" : "";
+        return '<div class="corr-row"><span class="lbl">' + escapeHtml(e.label) + ' <span class="cnt">(' + e.count + ')</span></span><span class="val" style="color:' + color + ';">' + e.avg.toFixed(1) + ' <span class="d">(' + sign + e.delta.toFixed(1) + ')</span></span></div>';
+      }).join("");
+  }
+
+  function showCorrInsight(rows, cfg, box) {
+    var overallAvg = average(rows, "nps");
+    var byKey = {};
+    rows.forEach(function (r) {
+      var v = r[cfg.field];
+      if (v === undefined || v === "" || v === null) return;
+      var vals = cfg.isMulti ? splitMulti(v) : [v];
+      vals.forEach(function (k) { if (!byKey[k]) byKey[k] = []; byKey[k].push(r.nps); });
+    });
+    var entries = Object.keys(byKey).filter(function (k) { return byKey[k].length >= 5; }).map(function (k) {
+      var vals = byKey[k];
+      var avg = vals.reduce(function (a, b) { return a + b; }, 0) / vals.length;
+      return { label: cfg.labelsMap[k] || k, count: vals.length, delta: avg - overallAvg };
+    });
+    entries.sort(function (a, b) { return a.delta - b.delta; });
+    var worst = entries[0];
+    if (!worst || worst.delta > -6) { box.style.display = "none"; return; }
+    box.style.display = "flex";
+    document.getElementById("choices-insight-text").innerHTML =
+      "Les répondants citant « <strong>" + escapeHtml(worst.label) + "</strong> » ont un NPS moyen " + Math.abs(worst.delta).toFixed(1) + " points sous la moyenne (n=" + worst.count + ") — le signal le plus net de ce groupe.";
+  }
+
+  /* ------------------------------------------------------------------
+     Bloc 4 — NPS distribution
   ------------------------------------------------------------------ */
   function renderNpsDistribution(rows) {
     var counts = new Array(11).fill(0);
@@ -495,69 +1006,38 @@
     destroyChart("nps-dist");
     state.charts["nps-dist"] = new Chart(document.getElementById("chart-nps-dist"), {
       type: "bar",
-      data: {
-        labels: labels,
-        datasets: [{
-          data: counts,
-          backgroundColor: colors,
-          borderRadius: 4,
-          maxBarThickness: 34
-        }]
-      },
+      data: { labels: labels, datasets: [{ data: counts, backgroundColor: colors, borderRadius: 4, maxBarThickness: 34 }] },
       options: {
         indexAxis: "y",
         responsive: true,
         maintainAspectRatio: false,
         plugins: {
           legend: { display: false },
-          tooltip: {
-            callbacks: {
-              label: function (ctx) {
-                var pct = ((ctx.raw / total) * 100).toFixed(0);
-                return ctx.raw + " réponses (" + pct + "%)";
-              }
-            }
-          }
+          tooltip: { callbacks: { label: function (ctx) { var pct = ((ctx.raw / total) * 100).toFixed(0); return ctx.raw + " réponses (" + pct + "%)"; } } }
         },
-        scales: {
-          x: { grid: { display: false }, ticks: { precision: 0 } },
-          y: { grid: { display: false }, reverse: true }
-        }
+        scales: { x: { grid: { display: false }, ticks: { precision: 0 } }, y: { grid: { display: false }, reverse: true } }
       }
     });
   }
 
   /* ------------------------------------------------------------------
-     Bloc 3 — Segments donut
+     Bloc 5 — Segments donut
   ------------------------------------------------------------------ */
-  function renderSegments(rows, type) {
-    var labelsMap = SEGMENT_LABELS[type];
+  function renderSegments(rows, type, audience) {
+    var labelsMap = SEGMENT_LABELS[type][audience];
     var keys = Object.keys(labelsMap);
     var counts = keys.map(function (k) { return rows.filter(function (r) { return r.segment === k; }).length; });
 
     destroyChart("segments");
     state.charts["segments"] = new Chart(document.getElementById("chart-segments"), {
       type: "doughnut",
-      data: {
-        labels: keys.map(function (k) { return labelsMap[k]; }),
-        datasets: [{
-          data: counts,
-          backgroundColor: [GOLD, DARK, INK3],
-          borderWidth: 2,
-          borderColor: "#fff"
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        cutout: "62%",
-        plugins: { legend: { position: "bottom", labels: { boxWidth: 12, padding: 16 } } }
-      }
+      data: { labels: keys.map(function (k) { return labelsMap[k]; }), datasets: [{ data: counts, backgroundColor: [GOLD, DARK, INK3], borderWidth: 2, borderColor: "#fff" }] },
+      options: { responsive: true, maintainAspectRatio: false, cutout: "62%", plugins: { legend: { position: "bottom", labels: { boxWidth: 12, padding: 16 } } } }
     });
   }
 
   /* ------------------------------------------------------------------
-     Bloc 4 — CSAT detail charts
+     Bloc 6 — CSAT detail charts (actifs uniquement — pas posé aux churn)
   ------------------------------------------------------------------ */
   function renderCsatCharts(rows, type) {
     var grid = document.getElementById("csat-charts-grid");
@@ -570,116 +1050,22 @@
       card.innerHTML = '<div style="font-weight:600; margin-bottom:12px; color:var(--au-dark);">' + q.label + '</div><div class="dash-chart-wrap" style="height:220px;"><canvas id="' + canvasId + '"></canvas></div>';
       grid.appendChild(card);
 
-      var counts = [1, 2, 3, 4, 5].map(function (v) { return rows.filter(function (r) { return r[q.field] === v; }).length; });
+      var scale = q.scale === 7 ? [1, 2, 3, 4, 5, 6, 7] : [1, 2, 3, 4, 5];
+      var counts = scale.map(function (v) { return rows.filter(function (r) { return r[q.field] === v; }).length; });
 
       destroyChart("csat-" + idx);
       state.charts["csat-" + idx] = new Chart(document.getElementById(canvasId), {
         type: "bar",
-        data: {
-          labels: ["1", "2", "3", "4", "5"],
-          datasets: [{ data: counts, backgroundColor: GOLD, borderRadius: 4, maxBarThickness: 44 }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: { legend: { display: false } },
-          scales: { y: { beginAtZero: true, ticks: { precision: 0 } }, x: { grid: { display: false } } }
-        }
+        data: { labels: scale.map(String), datasets: [{ data: counts, backgroundColor: GOLD, borderRadius: 4, maxBarThickness: 44 }] },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { precision: 0 } }, x: { grid: { display: false } } } }
       });
     });
   }
 
   /* ------------------------------------------------------------------
-     Bloc 5 — multi-choice
+     Bloc 7 — Verbatims
   ------------------------------------------------------------------ */
-  function renderChoicesChart(rows, type) {
-    var field = type === "vendeurs" ? "concurrence" : "freins";
-    var labelsMap = CHOICE_LABELS[type];
-    var tally = {};
-    Object.keys(labelsMap).forEach(function (k) { tally[k] = 0; });
-
-    rows.forEach(function (r) {
-      var raw = r[field] || "";
-      raw.split(",").map(function (s) { return s.trim(); }).filter(Boolean).forEach(function (v) {
-        if (tally[v] === undefined) tally[v] = 0;
-        tally[v]++;
-      });
-    });
-
-    var entries = Object.keys(tally).map(function (k) { return { key: k, label: labelsMap[k] || k, count: tally[k] }; });
-    entries.sort(function (a, b) { return b.count - a.count; });
-
-    destroyChart("choices");
-    state.charts["choices"] = new Chart(document.getElementById("chart-choices"), {
-      type: "bar",
-      data: {
-        labels: entries.map(function (e) { return e.label; }),
-        datasets: [{ data: entries.map(function (e) { return e.count; }), backgroundColor: DARK, borderRadius: 4, maxBarThickness: 28 }]
-      },
-      options: {
-        indexAxis: "y",
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: { legend: { display: false } },
-        scales: { x: { beginAtZero: true, ticks: { precision: 0 }, grid: { display: false } }, y: { grid: { display: false } } }
-      }
-    });
-  }
-
-  // Objectifies how much each checked irritant actually correlates with
-  // loyalty, computed after the fact from independent answers (NPS vs.
-  // checkbox) rather than asked directly — avoids leading respondents
-  // toward a causal link the questions never suggested.
-  function renderChoicesNpsCorrelation(rows, type) {
-    var wrap = document.getElementById("choices-correlation");
-    if (!wrap) return;
-
-    var field = type === "vendeurs" ? "concurrence" : "freins";
-    var labelsMap = CHOICE_LABELS[type];
-    var overallAvg = average(rows, "nps");
-
-    var byChoice = {};
-    Object.keys(labelsMap).forEach(function (k) { byChoice[k] = []; });
-
-    rows.forEach(function (r) {
-      var raw = r[field] || "";
-      raw.split(",").map(function (s) { return s.trim(); }).filter(Boolean).forEach(function (v) {
-        if (!byChoice[v]) byChoice[v] = [];
-        byChoice[v].push(r.nps);
-      });
-    });
-
-    var entries = Object.keys(byChoice)
-      .filter(function (k) { return byChoice[k].length >= 5; })
-      .map(function (k) {
-        var vals = byChoice[k];
-        var avg = vals.reduce(function (a, b) { return a + b; }, 0) / vals.length;
-        return { label: labelsMap[k] || k, count: vals.length, avg: avg, delta: avg - overallAvg };
-      });
-
-    entries.sort(function (a, b) { return a.delta - b.delta; });
-
-    if (!entries.length) {
-      wrap.innerHTML = '<p style="color:var(--au-ink3); font-size:0.85rem;">Pas encore assez de réponses par item pour calculer une corrélation fiable (minimum 5 par item).</p>';
-      return;
-    }
-
-    wrap.innerHTML =
-      '<div style="font-size:0.8rem; color:var(--au-ink3); margin-bottom:10px;">NPS moyen des répondants ayant coché chaque item, comparé au NPS moyen global (' + overallAvg.toFixed(1) + ') — calculé après coup, pas suggéré par la question.</div>' +
-      entries.map(function (e) {
-        var color = e.delta <= -10 ? RED : (e.delta >= 10 ? GREEN : INK3);
-        var sign = e.delta > 0 ? "+" : "";
-        return '<div style="display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-bottom:1px solid var(--au-line); font-size:0.86rem;">' +
-          '<span>' + escapeHtml(e.label) + ' <span style="color:var(--au-ink3);">(' + e.count + ')</span></span>' +
-          '<span style="font-weight:700; color:' + color + ';">' + e.avg.toFixed(1) + ' <span style="font-weight:500; font-size:0.78rem;">(' + sign + e.delta.toFixed(1) + ')</span></span>' +
-          '</div>';
-      }).join("");
-  }
-
-  /* ------------------------------------------------------------------
-     Bloc 6 — Verbatims
-  ------------------------------------------------------------------ */
-  function renderVerbatims(rows, type) {
+  function renderVerbatims(rows, type, audience) {
     var list = document.getElementById("verbatim-list");
     list.innerHTML = "";
 
@@ -692,11 +1078,12 @@
       return;
     }
 
+    var labelsMap = SEGMENT_LABELS[type][audience];
     top20.forEach(function (r) {
       var category = r.nps <= 6 ? "detractor" : (r.nps <= 8 ? "passive" : "promoter");
       var div = document.createElement("div");
       div.className = "dash-verbatim " + category;
-      var segLabel = SEGMENT_LABELS[type][r.segment] || r.segment;
+      var segLabel = labelsMap[r.segment] || r.segment;
       div.innerHTML =
         '<div class="dash-verbatim-meta"><span>' + formatDate(new Date(r.timestamp)) + '</span><span>' + escapeHtml(segLabel) + '</span><span>NPS ' + r.nps + '</span></div>' +
         '<div class="dash-verbatim-text">' + escapeHtml(r.verbatim) + '</div>';
@@ -711,39 +1098,39 @@
   }
 
   /* ------------------------------------------------------------------
-     Bloc 7 — raw data table
+     Bloc 8 — raw data table
   ------------------------------------------------------------------ */
   var PAGE_SIZE = 20;
 
   function renderRawTable(rows, type) {
     var head = document.getElementById("raw-table-head");
-    var intentField = type === "vendeurs" ? "intention_retour" : "usage_mobile";
-    var intentLabel = type === "vendeurs" ? "Intention retour" : "Usage mobile";
-    var csatLabels = CSAT_QUESTIONS[type];
+    var isVendeur = type === "vendeurs";
+    var freqLabelMap = isVendeur ? FREQ_VENDEUR_LABELS : FREQ_ACHETEUR_LABELS;
+    var labelsMap = SEGMENT_LABELS[type][state.audience];
 
-    head.innerHTML = ["Date", "Langue", "Segment", "NPS", csatLabels[0].label, csatLabels[1].label, "CES", intentLabel, "Verbatim"]
-      .map(function (h) { return "<th>" + h + "</th>"; }).join("");
+    var headCols = ["Date", "Langue", "Segment", "NPS"];
+    if (isVendeur) headCols.push("Réserve mise ?");
+    headCols.push("Réserve non atteinte", "Verbatim");
+    head.innerHTML = headCols.map(function (h) { return "<th>" + h + "</th>"; }).join("");
 
     var sorted = rows.slice().sort(function (a, b) { return new Date(b.timestamp) - new Date(a.timestamp); });
     var totalPages = Math.max(1, Math.ceil(sorted.length / PAGE_SIZE));
     state.page = clamp(state.page, 1, totalPages);
     var pageRows = sorted.slice((state.page - 1) * PAGE_SIZE, state.page * PAGE_SIZE);
-    var cesField = type === "vendeurs" ? "ces_facilite" : "ces_enlevement";
 
     var body = document.getElementById("raw-table-body");
     body.innerHTML = pageRows.map(function (r) {
       var verbatim = (r.verbatim || "").toString();
       if (verbatim.length > 60) verbatim = verbatim.slice(0, 60) + "…";
-      var segLabel = SEGMENT_LABELS[type][r.segment] || r.segment;
+      var segLabel = labelsMap[r.segment] || r.segment;
+      var reserveCell = isVendeur ? "<td>" + (r.a_mis_reserve === "oui" ? "Oui" : "Non") + "</td>" : "";
       return "<tr>" +
         "<td>" + formatDate(new Date(r.timestamp)) + "</td>" +
         "<td>" + (r.lang || "").toUpperCase() + "</td>" +
         "<td>" + escapeHtml(segLabel) + "</td>" +
         "<td>" + r.nps + "</td>" +
-        "<td>" + (r[csatLabels[0].field] || "") + "</td>" +
-        "<td>" + (r[csatLabels[1].field] || "") + "</td>" +
-        "<td>" + (r[cesField] || "") + "</td>" +
-        "<td>" + escapeHtml(r[intentField] || "") + "</td>" +
+        reserveCell +
+        "<td>" + escapeHtml(freqLabelMap[r.freq_reserve_non_atteinte] || "—") + "</td>" +
         "<td>" + escapeHtml(verbatim) + "</td>" +
         "</tr>";
     }).join("");
@@ -755,7 +1142,7 @@
 
   function changePage(delta) {
     state.page += delta;
-    renderRawTable(state.data[state.type], state.type);
+    renderRawTable(filterByAudience(state.data[state.type], state.audience), state.type);
   }
 
   /* ------------------------------------------------------------------
@@ -763,7 +1150,7 @@
   ------------------------------------------------------------------ */
   function exportCsv() {
     var type = state.type;
-    var rows = state.data[type];
+    var rows = filterByAudience(state.data[type], state.audience);
     var cols = COLUMNS[type];
     var lines = [cols.join(",")];
 
@@ -780,7 +1167,7 @@
     var url = URL.createObjectURL(blob);
     var a = document.createElement("a");
     a.href = url;
-    a.download = "auctelia-enquete-" + type + ".csv";
+    a.download = "auctelia-enquete-" + type + "-" + state.audience + ".csv";
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
