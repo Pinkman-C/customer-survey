@@ -473,6 +473,25 @@ img, svg { display: block; max-width: 100%; }
   margin-top: 6px;
 }
 
+/* "Autre" reveal — free-text field shown once "autre" is checked in a
+   checkbox question flagged autreReveal (see survey-engine.js) */
+
+.au-autre-reveal {
+  margin-top: 4px;
+  animation: au-slide-in 160ms ease-out;
+}
+
+.au-autre-reveal .au-textarea {
+  min-height: 76px;
+}
+
+.au-autre-label {
+  font-size: 0.82rem;
+  color: var(--au-ink2);
+  margin-bottom: 6px;
+  font-weight: 600;
+}
+
 /* ==========================================================================
    Navigation buttons
    ========================================================================== */
@@ -784,8 +803,131 @@ img, svg { display: block; max-width: 100%; }
 
 .dash-section-title {
   font-size: 1.05rem;
-  margin-bottom: 16px;
+  margin-bottom: 6px;
 }
+
+.dash-section-sub {
+  font-size: 0.85rem;
+  color: var(--au-ink3);
+  margin-bottom: 16px;
+  max-width: 62ch;
+}
+
+/* Audience switch (Actifs / Churn) — sits above the existing type switch
+   in the sidebar; same shape, white active state to stay distinct from
+   the gold-highlighted Vendeurs/Acheteurs switch right below it. */
+
+.dash-switch-label {
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: rgba(255,255,255,0.4);
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+
+.dash-type-switch.audience button.active {
+  background: #fff;
+  color: var(--au-dark);
+}
+
+/* Hand-rolled bar rows — used for the Prix de réserve / raisons / freins
+   blocks, which need highlighted individual bars (anti-bias item, "autre"
+   category) that a generic Chart.js dataset can't easily single out. */
+
+.bar-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 0;
+}
+
+.bar-row .bl { flex: 0 0 auto; width: 220px; font-size: 0.85rem; color: var(--au-ink2); }
+.bar-row .bt { flex: 1; height: 20px; background: var(--au-gray-bg); border-radius: 5px; overflow: hidden; }
+.bar-row .bt .fill { height: 100%; border-radius: 5px; transition: width .3s ease; }
+.bar-row .bc { flex: 0 0 auto; width: 46px; text-align: right; font-size: 0.82rem; font-weight: 700; color: var(--au-ink); font-variant-numeric: tabular-nums; }
+
+@media (max-width: 640px) {
+  .bar-row .bl { width: 140px; font-size: 0.78rem; }
+}
+
+/* Corrélation avec le NPS */
+
+.corr-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--au-line);
+  font-size: 0.86rem;
+}
+
+.corr-row:last-child { border-bottom: none; }
+.corr-row .lbl .cnt { color: var(--au-ink3); }
+.corr-row .val { font-weight: 700; font-variant-numeric: tabular-nums; }
+.corr-row .val .d { font-weight: 500; font-size: 0.78rem; }
+
+/* Synthèse comparative — les 4 segments côte à côte */
+
+.synth-table-wrap { overflow-x: auto; }
+
+table.synth-table { width: 100%; border-collapse: collapse; font-size: 0.87rem; }
+table.synth-table th {
+  text-align: left;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--au-ink3);
+  padding: 10px 14px;
+  border-bottom: 2px solid var(--au-line);
+}
+table.synth-table td { padding: 13px 14px; border-bottom: 1px solid var(--au-line); }
+table.synth-table tbody tr { cursor: pointer; transition: background .12s ease; }
+table.synth-table tbody tr:hover { background: var(--au-gray-bg); }
+table.synth-table tbody tr.current { background: #FDF7EC; }
+table.synth-table tbody tr.current td:first-child { border-left: 3px solid var(--au-gold); padding-left: 11px; }
+
+.synth-variant { font-weight: 700; color: var(--au-dark); font-size: 0.9rem; }
+.synth-variant .aud { display: block; font-weight: 500; font-size: 0.76rem; color: var(--au-ink3); margin-top: 1px; }
+.synth-num { font-variant-numeric: tabular-nums; font-weight: 700; }
+.synth-pill { display: inline-block; font-weight: 700; font-size: 0.82rem; padding: 3px 9px; border-radius: 999px; font-variant-numeric: tabular-nums; }
+.synth-caption { font-size: 0.8rem; color: var(--au-ink3); margin-top: 12px; }
+
+/* Croisement origine du prix de réserve × fréquence d'échec (vendeurs) */
+
+.cross-compare { display: flex; flex-direction: column; gap: 14px; }
+.cross-item .cross-label { font-size: 0.87rem; color: var(--au-ink2); margin-bottom: 6px; display: flex; justify-content: space-between; }
+.cross-item .cross-label strong { color: var(--au-ink); }
+.cross-bar { height: 26px; background: var(--au-gray-bg); border-radius: 6px; overflow: hidden; }
+.cross-bar .fill { height: 100%; border-radius: 6px; display: flex; align-items: center; justify-content: flex-end; padding-right: 8px; color: #fff; font-size: 0.78rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+.cross-note { font-size: 0.8rem; color: var(--au-ink3); margin-top: 12px; }
+
+/* "Ce que ça dit" — synthèse en phrase des croisements/corrélations,
+   pour ne pas laisser l'interprétation entièrement au lecteur. */
+
+.insight-box {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  background: #FDF7EC;
+  border: 1px solid var(--au-gold);
+  border-radius: var(--au-radius-sm);
+  padding: 13px 16px;
+  margin-top: 14px;
+}
+
+.insight-box .insight-label {
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 700;
+  color: var(--au-gold-dark);
+  flex-shrink: 0;
+  padding-top: 2px;
+}
+
+.insight-box p { color: var(--au-ink); font-size: 0.88rem; }
+.insight-box p strong { color: var(--au-dark); }
 
 /* KPI cards */
 
@@ -980,6 +1122,7 @@ table.dash-table tr:hover td { background: var(--au-bg); }
 
   .dash-sidebar .au-logo,
   .dash-nav,
+  .dash-switch-label,
   .dash-sidebar-footer span { display: none; }
 
   .dash-type-switch { flex: 1; }

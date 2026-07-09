@@ -129,7 +129,10 @@
 
   function pruneSkippedAnswers() {
     for (var i = 0; i < total; i++) {
-      if (!isVisible(i)) delete state.answers[FIELD(i)];
+      if (!isVisible(i)) {
+        delete state.answers[FIELD(i)];
+        delete state.answers[FIELD(i) + "_autre_detail"];
+      }
     }
   }
 
@@ -323,6 +326,7 @@
   }
 
   function renderCheckbox(q, field) {
+    var wrap = el("div");
     var container = el("div");
     if (!Array.isArray(state.answers[field])) state.answers[field] = [];
     getDisplayOptions(q, field).forEach(function (opt) {
@@ -343,7 +347,27 @@
       label.appendChild(el("span", null, escapeHtml(opt.label)));
       container.appendChild(label);
     });
-    return container;
+    wrap.appendChild(container);
+
+    // "Autre" reveal — a free-text field appears as soon as the "autre"
+    // option is checked, so we capture what it actually means instead of
+    // an unqualified tag in the data.
+    if (q.autreReveal && state.answers[field].indexOf("autre") !== -1) {
+      var detailField = field + "_autre_detail";
+      var reveal = el("div", "au-autre-reveal");
+      reveal.appendChild(el("div", "au-autre-label", t.autreLabel));
+      var textarea = document.createElement("textarea");
+      textarea.className = "au-textarea";
+      textarea.maxLength = 300;
+      textarea.placeholder = t.autrePlaceholder;
+      textarea.value = state.answers[detailField] || "";
+      textarea.addEventListener("input", function () {
+        state.answers[detailField] = textarea.value;
+      });
+      reveal.appendChild(textarea);
+      wrap.appendChild(reveal);
+    }
+    return wrap;
   }
 
   function renderTextarea(q, field) {
@@ -443,7 +467,8 @@
       lang: lang,
       source: utmSource,
       user_agent: navigator.userAgent,
-      survey_type: cfg.surveyType
+      survey_type: cfg.surveyType,
+      audience: cfg.audience || ""
     };
     cfg.fieldNames.forEach(function (name) {
       var val = state.answers[name];
@@ -453,12 +478,17 @@
 
     // Record the shuffled display order for randomized checklists, so
     // the raw data keeps a record of what each respondent actually saw
-    // (see the anti-primacy-bias shuffle in getDisplayOptions).
+    // (see the anti-primacy-bias shuffle in getDisplayOptions), and the
+    // free-text detail captured when "autre" was checked (see the
+    // "Autre" reveal in renderCheckbox).
     questions.forEach(function (q, idx) {
+      var field = FIELD(idx);
       if (q.type === "checkbox" && q.shuffle) {
-        var field = FIELD(idx);
         var order = shuffleCache[field];
         payload[field + "_order"] = order ? order.map(function (o) { return o.value; }).join(", ") : "";
+      }
+      if (q.type === "checkbox" && q.autreReveal) {
+        payload[field + "_autre_detail"] = state.answers[field + "_autre_detail"] || "";
       }
     });
 
