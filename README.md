@@ -102,7 +102,13 @@ Chaque formulaire accepte le paramètre `?test=1`, qui active le **mode test** :
 - le verrou anti-double-soumission est désactivé — on peut soumettre autant de fois qu'on veut, sans navigation privée ni vidage du `localStorage` ;
 - la colonne `source` de la réponse est forcée à `test` : le dashboard **exclut automatiquement** ces lignes des statistiques, et elles sont faciles à filtrer/supprimer dans Google Sheets.
 
-URLs à communiquer aux validateurs :
+**Le plus simple pour la validation** : envoyer un seul lien, la page d'accueil en mode test —
+
+```
+https://survey.auctelia.be/?test=1
+```
+
+Elle affiche les 4 formulaires (actifs + relance/churn) avec des boutons qui conservent le mode test, et le bandeau test. Sinon, URLs directes par formulaire :
 
 | Formulaire | FR | NL |
 |---|---|---|
