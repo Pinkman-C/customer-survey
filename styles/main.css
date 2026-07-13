@@ -796,6 +796,17 @@ img, svg { display: block; max-width: 100%; }
   margin-bottom: 20px;
 }
 
+/* Bandeau mode test (?test=1) sur les formulaires */
+.au-test-banner {
+  background: #FDF2DC;
+  border-bottom: 1px solid var(--au-gold);
+  color: #7A5B0E;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-align: center;
+  padding: 10px 16px;
+}
+
 .dash-section {
   margin-bottom: 40px;
   scroll-margin-top: 20px;

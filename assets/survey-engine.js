@@ -9,12 +9,23 @@
   if (!cfg) return;
 
   /* ------------------------------------------------------------------
+     Test mode (?test=1) — for internal validation before launch: the
+     anti-double-submission flag is neither checked nor set (so testers
+     can submit as many times as they want), the payload's source is
+     forced to "test" (so the dashboard and any analysis can exclude
+     those rows), and a banner tells the tester they're in test mode.
+  ------------------------------------------------------------------ */
+  var IS_TEST = (new URLSearchParams(window.location.search)).get("test") === "1";
+
+  /* ------------------------------------------------------------------
      Anti double-submission — once a respondent has successfully (or
      even semi-successfully, see submitSurvey) submitted this survey
-     type, never show the form again on this device/browser.
+     type, never show the form again on this device/browser. The flag
+     is deliberately shared between the actif and churn variants of a
+     type (see README): one person answers one survey per wave.
   ------------------------------------------------------------------ */
   var SUBMIT_FLAG_KEY = "au_submitted_" + cfg.surveyType;
-  if (localStorage.getItem(SUBMIT_FLAG_KEY)) {
+  if (!IS_TEST && localStorage.getItem(SUBMIT_FLAG_KEY)) {
     var alreadyLang = (new URLSearchParams(window.location.search)).get("lang") === "nl" ? "nl" : "fr";
     window.location.replace(cfg.thanksUrl + "?lang=" + alreadyLang);
     return;
@@ -76,7 +87,11 @@
      Restore in-progress answers after a language switch (see the lang
      switcher below, which stashes state here right before reloading).
   ------------------------------------------------------------------ */
-  var ANSWERS_KEY = "au_answers_" + cfg.surveyType;
+  // Scoped per survey type AND audience: vendeurs and vendeurs-churn
+  // share a surveyType but are distinct questionnaires with different
+  // fields — an in-progress stash from one must never restore into the
+  // other (unlike the submit flag above, which is deliberately shared).
+  var ANSWERS_KEY = "au_answers_" + cfg.surveyType + (cfg.audience ? "_" + cfg.audience : "");
   var savedState = sessionStorage.getItem(ANSWERS_KEY);
   if (savedState) {
     sessionStorage.removeItem(ANSWERS_KEY);
@@ -465,7 +480,7 @@
     var payload = {
       timestamp: new Date().toISOString(),
       lang: lang,
-      source: utmSource,
+      source: IS_TEST ? "test" : utmSource,
       user_agent: navigator.userAgent,
       survey_type: cfg.surveyType,
       audience: cfg.audience || ""
@@ -501,9 +516,9 @@
     var payload = buildPayload();
 
     function finish() {
-      localStorage.setItem(SUBMIT_FLAG_KEY, "1");
+      if (!IS_TEST) localStorage.setItem(SUBMIT_FLAG_KEY, "1");
       sessionStorage.removeItem(ANSWERS_KEY);
-      window.location.href = cfg.thanksUrl + "?lang=" + lang;
+      window.location.href = cfg.thanksUrl + "?lang=" + lang + (IS_TEST ? "&test=1" : "");
     }
 
     fetch("/api/submit", {
@@ -513,6 +528,15 @@
     })
       .then(finish)
       .catch(finish);
+  }
+
+  if (IS_TEST) {
+    var testBanner = el("div", "au-test-banner",
+      lang === "nl"
+        ? "🧪 Testmodus — uw antwoorden worden niet meegeteld in de resultaten. U kunt het formulier meermaals invullen."
+        : "🧪 Mode test — vos réponses ne sont pas comptabilisées dans les résultats. Vous pouvez remplir le formulaire plusieurs fois.");
+    var pageEl = document.querySelector(".au-page");
+    if (pageEl) pageEl.insertBefore(testBanner, pageEl.firstChild);
   }
 
   render();

@@ -216,7 +216,11 @@
         return r.text();
       })
       .then(function (csvText) {
-        var rows = parseCsv(csvText, COLUMNS[type]);
+        // Rows submitted via the forms' test mode (?test=1) carry
+        // source === "test" — validation runs, never real answers.
+        var rows = parseCsv(csvText, COLUMNS[type]).filter(function (r) {
+          return r.source !== "test";
+        });
         if (rows.length === 0) throw new Error("empty sheet");
         state.data[type] = rows;
         state.isMock[type] = false;
