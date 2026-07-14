@@ -117,7 +117,7 @@ Elle affiche les 4 formulaires (actifs + relance/churn) avec des boutons qui con
 | Vendeurs churn | `https://survey.auctelia.be/vendeurs-churn?test=1` | `https://survey.auctelia.be/vendeurs-churn?lang=nl&test=1` |
 | Acheteurs churn | `https://survey.auctelia.be/acheteurs-churn?test=1` | `https://survey.auctelia.be/acheteurs-churn?lang=nl&test=1` |
 
-Le switch FR/NL en haut du formulaire conserve le mode test — un seul lien par formulaire suffit donc si le validateur est bilingue. Les soumissions test arrivent quand même dans Google Sheets (si le webhook n8n est configuré) avec `source = test` : tu peux les laisser (le dashboard les ignore) ou les supprimer après validation.
+En mode test, un **menu latéral gauche** (injecté par `assets/test-nav.js`) permet de passer directement d'un questionnaire à l'autre et d'ouvrir le dashboard — il n'apparaît jamais sans `?test=1`. Le switch FR/NL en haut du formulaire conserve le mode test — un seul lien par formulaire suffit donc si le validateur est bilingue. Les soumissions test arrivent quand même dans Google Sheets (si le webhook n8n est configuré) avec `source = test` : tu peux les laisser (le dashboard les ignore) ou les supprimer après validation.
 
 > ⚠️ Ne jamais mettre `?test=1` dans les liens Mailchimp — les réponses seraient ignorées par le dashboard.
 
