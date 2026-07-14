@@ -11,6 +11,10 @@
      URL below. Leave blank to keep showing demo data.
   ------------------------------------------------------------------ */
   var CONFIG = {
+    // Set to false to open the dashboard to anyone with the URL — useful
+    // while there's no real respondent data yet (only the demo dataset is
+    // visible anyway). Set back to true before real answers start coming in.
+    REQUIRE_PASSWORD: false,
     DASHBOARD_PASSWORD: "auctelia2026",
     SHEET_CSV_URL: {
       vendeurs: "",
@@ -138,10 +142,6 @@
   var gate = document.getElementById("gate");
   var shell = document.getElementById("dash-shell");
 
-  if (sessionStorage.getItem("au_dash_auth") === "1") {
-    showDashboard();
-  }
-
   document.getElementById("gate-form").addEventListener("submit", function (e) {
     e.preventDefault();
     var val = document.getElementById("gate-password").value;
@@ -153,10 +153,16 @@
     }
   });
 
-  document.getElementById("logout-btn").addEventListener("click", function () {
-    sessionStorage.removeItem("au_dash_auth");
-    window.location.reload();
-  });
+  if (CONFIG.REQUIRE_PASSWORD) {
+    document.getElementById("logout-btn").addEventListener("click", function () {
+      sessionStorage.removeItem("au_dash_auth");
+      window.location.reload();
+    });
+  } else {
+    // No session to log out of while the gate is open — hide the button
+    // rather than leave a control that does nothing.
+    document.getElementById("logout-btn").style.display = "none";
+  }
 
   function showDashboard() {
     gate.style.display = "none";
@@ -1186,5 +1192,15 @@
       state.charts[key].destroy();
       delete state.charts[key];
     }
+  }
+
+  // Auto-bypass the gate (no password required, or already authenticated
+  // this session). Placed at the end of the file, after every var/function
+  // declaration above has run — showDashboard() -> init() reaches into
+  // things like VERBATIMS_MOCK that are only assigned once their own
+  // top-level statement executes, and calling it any earlier would read
+  // them while still undefined.
+  if (!CONFIG.REQUIRE_PASSWORD || sessionStorage.getItem("au_dash_auth") === "1") {
+    showDashboard();
   }
 })();
