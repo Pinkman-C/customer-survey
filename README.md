@@ -227,18 +227,21 @@ Si l'URL est mal configurée ou temporairement inaccessible, le dashboard retomb
 
 ---
 
-## 5. Changer le mot de passe du dashboard
+## 5. Mot de passe du dashboard
 
 Le mot de passe est vérifié côté client dans `assets/dashboard.js` (pas d'authentification serveur — usage interne occasionnel) :
 
 ```js
 var CONFIG = {
+  REQUIRE_PASSWORD: false,
   DASHBOARD_PASSWORD: "auctelia2026",
   ...
 };
 ```
 
-Pour le changer : modifie la valeur de `DASHBOARD_PASSWORD`, commit, push. Vercel redéploie automatiquement et le nouveau mot de passe est actif.
+**`REQUIRE_PASSWORD` est actuellement à `false`** : le dashboard est ouvert à quiconque a l'URL, sans mot de passe. C'est volontaire tant qu'il n'y a pas de vraies réponses — seules les données de démonstration sont visibles, il n'y a donc rien à protéger. **Repasse `REQUIRE_PASSWORD` à `true` avant que les premières vraies réponses arrivent** (avant l'envoi Mailchimp, ou dès que le CSV Google Sheets est connecté — section 4), commit, push.
+
+Pour changer le mot de passe : modifie `DASHBOARD_PASSWORD`, commit, push. Vercel redéploie automatiquement et le nouveau mot de passe est actif.
 
 > ⚠️ Ce mot de passe apparaît en clair dans le code source livré au navigateur. C'est un choix assumé pour un dashboard interne à faible sensibilité (pas de données nominatives, verbatims anonymes) — ne pas y stocker d'informations confidentielles au-delà des résultats d'enquête.
 
@@ -249,6 +252,7 @@ Pour le changer : modifie la valeur de `DASHBOARD_PASSWORD`, commit, push. Verce
 | Variable | Où | Description |
 |---|---|---|
 | `N8N_WEBHOOK_URL` | Vercel (env var) | URL du webhook n8n qui reçoit les réponses et les écrit dans Google Sheets |
+| `REQUIRE_PASSWORD` | `assets/dashboard.js` (constante) | Active/désactive le mot de passe du dashboard — actuellement `false` (voir section 5) |
 | `DASHBOARD_PASSWORD` | `assets/dashboard.js` (constante) | Mot de passe d'accès au dashboard (pas une vraie variable d'environnement, voir section 5) |
 | `SHEET_CSV_URL.vendeurs` / `.acheteurs` | `assets/dashboard.js` (constante) | URLs CSV publiées des onglets Google Sheets (voir section 4) |
 
