@@ -3,8 +3,17 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Auctelia — Enquête de satisfaction</title>
+<title>Auctelia — Enquêtes de satisfaction</title>
 <link rel="stylesheet" href="styles/main.css">
+<style>
+  .au-picker-group { margin-bottom: 28px; }
+  .au-picker-group-title {
+    font-size: 0.78rem; font-weight: 700; letter-spacing: 0.08em;
+    text-transform: uppercase; color: var(--au-ink3); margin-bottom: 12px;
+  }
+  .au-picker-buttons { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
+  .au-picker-buttons .au-btn { margin-left: 0; text-decoration: none; display: inline-flex; align-items: center; }
+</style>
 </head>
 <body>
 <div class="au-page">
@@ -13,10 +22,22 @@
   </div>
   <main class="au-thanks" id="fallback-view" style="display:none;">
     <h1>Enquêtes de satisfaction Auctelia</h1>
-    <p style="margin-bottom:28px;">Choisissez l'enquête qui vous concerne, ou utilisez le lien reçu par email pour accéder directement à la bonne langue.</p>
-    <div style="display:flex; gap:12px; flex-wrap:wrap; justify-content:center;">
-      <a class="au-btn au-btn-primary" style="margin-left:0; text-decoration:none; display:inline-flex; align-items:center;" href="vendeurs.html">Enquête vendeurs</a>
-      <a class="au-btn au-btn-gold" style="text-decoration:none; display:inline-flex; align-items:center;" href="acheteurs.html">Enquête acheteurs</a>
+    <p style="margin-bottom:28px;">Choisissez l'enquête qui vous concerne, ou utilisez le lien reçu par email pour accéder directement à la bonne langue. <span lang="nl">Kies de enquête die op u van toepassing is — de taal (FR/NL) kunt u bovenaan het formulier wijzigen.</span></p>
+
+    <div class="au-picker-group">
+      <div class="au-picker-group-title">Clients actifs / Actieve klanten</div>
+      <div class="au-picker-buttons">
+        <a class="au-btn au-btn-primary" href="vendeurs.html" data-survey-link>Enquête vendeurs</a>
+        <a class="au-btn au-btn-gold" href="acheteurs.html" data-survey-link>Enquête acheteurs</a>
+      </div>
+    </div>
+
+    <div class="au-picker-group">
+      <div class="au-picker-group-title">Anciens clients (relance) / Voormalige klanten</div>
+      <div class="au-picker-buttons">
+        <a class="au-btn au-btn-primary" href="vendeurs-churn.html" data-survey-link>Enquête vendeurs — relance</a>
+        <a class="au-btn au-btn-gold" href="acheteurs-churn.html" data-survey-link>Enquête acheteurs — relance</a>
+      </div>
     </div>
   </main>
 </div>
@@ -27,21 +48,42 @@
   var type = (params.get("type") || "").toLowerCase();
   var target = null;
 
-  if (type === "vendeurs" || type === "vendeur" || type === "seller" || type === "sellers") {
+  if (type === "vendeurs-churn" || type === "vendeur-churn") {
+    target = "vendeurs-churn.html";
+  } else if (type === "acheteurs-churn" || type === "acheteur-churn") {
+    target = "acheteurs-churn.html";
+  } else if (type === "vendeurs" || type === "vendeur" || type === "seller" || type === "sellers") {
     target = "vendeurs.html";
   } else if (type === "acheteurs" || type === "acheteur" || type === "buyer" || type === "buyers") {
     target = "acheteurs.html";
   }
 
+  // Preserve all other query params (lang, utm_source, test, etc.)
+  params.delete("type");
+  var qs = params.toString();
+
   if (target) {
-    // Preserve all other query params (lang, utm_source, etc.)
-    params.delete("type");
-    var qs = params.toString();
     window.location.replace(target + (qs ? "?" + qs : ""));
-  } else {
-    document.getElementById("fallback-view").style.display = "flex";
+    return;
   }
+
+  // Picker mode: carry the current params onto each survey link, so a
+  // single URL like /?test=1 opens every form in the right mode.
+  document.querySelectorAll("[data-survey-link]").forEach(function (a) {
+    if (qs) a.href = a.getAttribute("href") + "?" + qs;
+  });
+
+  if (params.get("test") === "1") {
+    var banner = document.createElement("div");
+    banner.className = "au-test-banner";
+    banner.textContent = "🧪 Mode test — les liens ci-dessous ouvrent les formulaires en mode test : réponses non comptabilisées, soumissions multiples autorisées. / Testmodus — antwoorden worden niet meegeteld.";
+    var pageEl = document.querySelector(".au-page");
+    pageEl.insertBefore(banner, pageEl.firstChild);
+  }
+
+  document.getElementById("fallback-view").style.display = "flex";
 })();
 </script>
+<script src="assets/test-nav.js"></script>
 </body>
 </html>

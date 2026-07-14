@@ -94,6 +94,33 @@ Le paramètre `source`/`utm_source` est enregistré tel quel dans chaque répons
 
 Le lien générique `https://survey.auctelia.be/?type=vendeurs` (ou `?type=acheteurs`) fonctionne aussi et redirige automatiquement, en conservant les autres paramètres (`lang`, `utm_source`). Il ne couvre que les variantes actives — utilise les URLs `-churn` directement pour la base churn.
 
+### 2.5. URLs de test (validation interne avant envoi)
+
+Chaque formulaire accepte le paramètre `?test=1`, qui active le **mode test** :
+
+- un bandeau visible indique au testeur qu'il est en mode test (FR ou NL selon la langue) ;
+- le verrou anti-double-soumission est désactivé — on peut soumettre autant de fois qu'on veut, sans navigation privée ni vidage du `localStorage` ;
+- la colonne `source` de la réponse est forcée à `test` : le dashboard **exclut automatiquement** ces lignes des statistiques, et elles sont faciles à filtrer/supprimer dans Google Sheets.
+
+**Le plus simple pour la validation** : envoyer un seul lien, la page d'accueil en mode test —
+
+```
+https://survey.auctelia.be/?test=1
+```
+
+Elle affiche les 4 formulaires (actifs + relance/churn) avec des boutons qui conservent le mode test, et le bandeau test. Sinon, URLs directes par formulaire :
+
+| Formulaire | FR | NL |
+|---|---|---|
+| Vendeurs | `https://survey.auctelia.be/vendeurs?test=1` | `https://survey.auctelia.be/vendeurs?lang=nl&test=1` |
+| Acheteurs | `https://survey.auctelia.be/acheteurs?test=1` | `https://survey.auctelia.be/acheteurs?lang=nl&test=1` |
+| Vendeurs churn | `https://survey.auctelia.be/vendeurs-churn?test=1` | `https://survey.auctelia.be/vendeurs-churn?lang=nl&test=1` |
+| Acheteurs churn | `https://survey.auctelia.be/acheteurs-churn?test=1` | `https://survey.auctelia.be/acheteurs-churn?lang=nl&test=1` |
+
+En mode test, un **menu latéral gauche** (injecté par `assets/test-nav.js`) permet de passer directement d'un questionnaire à l'autre et d'ouvrir le dashboard — il n'apparaît jamais sans `?test=1`. Le switch FR/NL en haut du formulaire conserve le mode test — un seul lien par formulaire suffit donc si le validateur est bilingue. Les soumissions test arrivent quand même dans Google Sheets (si le webhook n8n est configuré) avec `source = test` : tu peux les laisser (le dashboard les ignore) ou les supprimer après validation.
+
+> ⚠️ Ne jamais mettre `?test=1` dans les liens Mailchimp — les réponses seraient ignorées par le dashboard.
+
 ---
 
 ## 3. Configuration n8n
@@ -260,5 +287,6 @@ npx vercel dev
 - **Skip logic** : les questions peuvent porter une propriété `skipIf: function(answers) { ... }` dans leur config — si elle retourne `true`, la question est sautée à la navigation et exclue du calcul de la barre de progression (`X / Y` s'adapte au nombre réel de questions visibles). Utilisé sur `vendeurs.html`/`vendeurs-churn.html` pour sauter l'origine et la fréquence d'échec du prix de réserve si le répondant indique n'en avoir jamais mis. Les réponses des questions sautées (et leur éventuel `_autre_detail`) sont retirées du payload avant l'envoi.
 - **Échelles CES (effort)** : `1 = négatif` (très difficile/compliqué) et `7 = positif` (très facile/fluide), dans le même sens que le NPS et les CSAT (plus haut = mieux). Si vous ajoutez une nouvelle question CES, gardez cette convention — le dashboard (KPI, code couleur du thermomètre) suppose que 7 est la meilleure note.
 - **Persistance de la langue en cours de formulaire** : cliquer sur FR/NL en pleine saisie sauvegarde `state.answers` dans `sessionStorage` juste avant le rechargement de page, et les restaure au chargement dans la nouvelle langue — le répondant ne reperd pas sa progression en changeant de langue.
-- **Anti-double-soumission** : après un envoi (réussi ou non, voir plus haut), un flag est posé dans `localStorage` (`au_submitted_<survey_type>`). Toute visite ultérieure du même formulaire sur le même navigateur redirige directement vers la page de remerciement, sans réafficher le questionnaire. Utile pour les tests : videz le `localStorage` du site (ou ouvrez une fenêtre de navigation privée) pour re-soumettre. Ce flag est partagé entre la variante actif et churn d'un même type (`au_submitted_acheteurs` sert pour `acheteurs.html` et `acheteurs-churn.html`) — un répondant qui a déjà soumis l'une ne verra pas l'autre.
+- **Anti-double-soumission** : après un envoi (réussi ou non, voir plus haut), un flag est posé dans `localStorage` (`au_submitted_<survey_type>`). Toute visite ultérieure du même formulaire sur le même navigateur redirige directement vers la page de remerciement, sans réafficher le questionnaire. Ce flag est partagé entre la variante actif et churn d'un même type (`au_submitted_acheteurs` sert pour `acheteurs.html` et `acheteurs-churn.html`) — un répondant qui a déjà soumis l'une ne verra pas l'autre. Pour tester sans être bloqué, utilisez le mode test `?test=1` (section 2.5), qui ignore ce flag et ne le pose pas.
+- **Mode test (`?test=1`)** : voir section 2.5. Implémenté dans `assets/survey-engine.js` (constante `IS_TEST`) ; le dashboard filtre les lignes `source === "test"` au chargement du CSV (`loadData` dans `assets/dashboard.js`).
 - **Dashboard — deux filtres combinables** : la sidebar a un switch Audience (Actifs/Churn) en plus du switch Type (Acheteurs/Vendeurs). Le bloc "Synthèse comparative" en haut de page montre les 4 combinaisons côte à côte indépendamment du filtre actif, et cliquer une ligne bascule les deux switches en même temps.
