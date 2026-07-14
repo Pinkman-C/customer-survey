@@ -260,7 +260,6 @@
       input.addEventListener("change", function () {
         state.answers[field] = opt.value;
         refreshStep();
-        setTimeout(function () { goNext(true); }, 180);
       });
       label.appendChild(input);
       var textWrap = el("div", "au-option-text");
@@ -424,7 +423,7 @@
       if (isLast) {
         submitSurvey(next);
       } else {
-        goNext(false);
+        goNext();
       }
     });
     row.appendChild(next);
@@ -444,11 +443,8 @@
     render();
   }
 
-  function goNext(skipIfInvalid) {
-    if (!isAnswered(state.step)) {
-      if (skipIfInvalid) return;
-      return;
-    }
+  function goNext() {
+    if (!isAnswered(state.step)) return;
     var next = nextVisibleIndex(state.step);
     if (next < total) {
       state.step = next;
