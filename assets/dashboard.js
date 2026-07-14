@@ -59,8 +59,8 @@
   var FREINS_LABELS = {
     prix_reserve_eleve: "Prix de réserve trop élevés", peu_de_lots: "Trop peu de lots dans ma catégorie",
     logistique_compliquee: "Logistique d'enlèvement compliquée", concurrence_forte: "Concurrence trop forte",
-    frais_vente: "Frais de vente", annulation_post_adjudication: "Risque d'annuler la vente après avoir gagné l'enchère",
-    prix_final_superieur_neuf: "Prix final > équivalent neuf",
+    frais_vente: "Frais de vente", annulation_post_adjudication: "Risque de refus de la vente après l'enchère remportée",
+    qualite_interactions: "Qualité des interactions avec le service client",
     rien_satisfait: "Rien, je suis satisfait", autre: "Autre"
   };
   var RAISONS_ACHETEUR_LABELS = {
@@ -73,8 +73,8 @@
     aucune_raison: "Aucune raison particulière", autre: "Autre"
   };
   var RAISONS_VENDEUR_LABELS = {
-    prix_decevant: "Prix de vente final trop souvent décevant",
-    reserve_non_atteinte: "Prix de réserve trop souvent non atteint",
+    prix_decevant: "Prix de vente final en dessous des attentes",
+    reserve_non_atteinte: "Prix de réserve non atteint sur certains lots",
     suivi_insatisfaisant: "Suivi insatisfaisant",
     qualite_interactions: "Qualité insuffisante des échanges avec le service client",
     mise_en_vente_compliquee: "Mise en vente trop compliquée",
@@ -89,7 +89,7 @@
     pas_de_retour: "Rien, je ne prévois pas de revenir", autre: "Autre"
   };
   var LEVIERS_VENDEUR_LABELS = {
-    reserve_realiste: "Prix de réserve plus réalistes", meilleur_accompagnement: "Meilleur accompagnement",
+    reserve_realiste: "Meilleurs résultats", meilleur_accompagnement: "Meilleur accompagnement",
     processus_simple: "Processus plus simple", plus_de_visibilite: "Plus de visibilité sur mes lots",
     pas_de_retour: "Rien, je ne prévois pas de revendre", autre: "Autre"
   };
