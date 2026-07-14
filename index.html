@@ -3,16 +3,33 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Auctelia — Enquêtes de satisfaction</title>
+<meta name="robots" content="noindex">
+<title>Auctelia — Validation interne des enquêtes</title>
 <link rel="stylesheet" href="styles/main.css">
 <style>
-  .au-picker-group { margin-bottom: 28px; }
-  .au-picker-group-title {
+  .au-hub { max-width: 760px; margin: 0 auto; padding: 40px 20px 80px; }
+  .au-hub h1 { font-size: 1.6rem; margin-bottom: 8px; }
+  .au-hub-lead { color: var(--au-ink2); margin-bottom: 28px; line-height: 1.55; }
+  .au-hub-section-title {
     font-size: 0.78rem; font-weight: 700; letter-spacing: 0.08em;
-    text-transform: uppercase; color: var(--au-ink3); margin-bottom: 12px;
+    text-transform: uppercase; color: var(--au-ink3); margin: 28px 0 10px;
   }
-  .au-picker-buttons { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
-  .au-picker-buttons .au-btn { margin-left: 0; text-decoration: none; display: inline-flex; align-items: center; }
+  .au-hub-note {
+    background: #FDF2DC; border: 1px solid var(--au-gold); color: #7A5B0E;
+    border-radius: var(--au-radius-sm); padding: 10px 14px;
+    font-size: 0.85rem; margin: 14px 0 24px; line-height: 1.5;
+  }
+  .au-hub table {
+    width: 100%; border-collapse: collapse; font-size: 0.88rem;
+    background: var(--au-surface); border: 1px solid var(--au-line);
+    border-radius: var(--au-radius-sm); overflow: hidden;
+  }
+  .au-hub th, .au-hub td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--au-line); vertical-align: top; }
+  .au-hub th { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--au-ink3); background: var(--au-gray-bg); }
+  .au-hub tr:last-child td { border-bottom: none; }
+  .au-hub-table-wrap { overflow-x: auto; }
+  .au-hub-links { display: flex; gap: 10px; flex-wrap: wrap; }
+  .au-hub-links .au-btn { margin-left: 0; text-decoration: none; display: inline-flex; align-items: center; }
 </style>
 </head>
 <body>
@@ -20,24 +37,55 @@
   <div class="au-topbar">
     <a class="au-logo" href="#"><span>Auctelia</span><span class="dot">.</span></a>
   </div>
-  <main class="au-thanks" id="fallback-view" style="display:none;">
-    <h1>Enquêtes de satisfaction Auctelia</h1>
-    <p style="margin-bottom:28px;">Choisissez l'enquête qui vous concerne, ou utilisez le lien reçu par email pour accéder directement à la bonne langue. <span lang="nl">Kies de enquête die op u van toepassing is — de taal (FR/NL) kunt u bovenaan het formulier wijzigen.</span></p>
 
-    <div class="au-picker-group">
-      <div class="au-picker-group-title">Clients actifs / Actieve klanten</div>
-      <div class="au-picker-buttons">
-        <a class="au-btn au-btn-primary" href="vendeurs.html" data-survey-link>Enquête vendeurs</a>
-        <a class="au-btn au-btn-gold" href="acheteurs.html" data-survey-link>Enquête acheteurs</a>
-      </div>
+  <main class="au-hub" id="hub-view" style="display:none;">
+    <h1>Enquêtes de satisfaction — espace de validation interne</h1>
+    <p class="au-hub-lead">
+      Quatre questionnaires bilingues FR/NL préparés pour le relaunch de septembre 2026 :
+      deux enquêtes de <strong>satisfaction</strong> (NPS, confiance, effort) pour les clients
+      actifs, et deux enquêtes de <strong>relance</strong> pour comprendre pourquoi d'anciens
+      clients n'achètent ou ne vendent plus. Les réponses alimentent le dashboard interne
+      via Google Sheets.
+    </p>
+
+    <div class="au-hub-section-title">Répartition des envois</div>
+    <div class="au-hub-table-wrap">
+      <table>
+        <tr><th>Public (segment CRM)</th><th>Questionnaire</th></tr>
+        <tr><td>Vendeurs actifs — au moins une vente dans les 12 derniers mois</td><td>Enquête vendeurs</td></tr>
+        <tr><td>Acheteurs actifs — au moins un achat dans les 12 derniers mois</td><td>Enquête acheteurs</td></tr>
+        <tr><td>Vendeurs inactifs — dernière vente il y a plus de 12 mois</td><td>Enquête vendeurs — relance</td></tr>
+        <tr><td>Acheteurs inactifs — dernier achat il y a plus de 12 mois</td><td>Enquête acheteurs — relance</td></tr>
+      </table>
+    </div>
+    <div class="au-hub-note">
+      Chaque client reçoit par email (Mailchimp) un <strong>lien direct</strong> vers son
+      questionnaire, dans sa langue — personne ne passe par cette page. Elle sert uniquement
+      à la validation interne avant envoi.
     </div>
 
-    <div class="au-picker-group">
-      <div class="au-picker-group-title">Anciens clients (relance) / Voormalige klanten</div>
-      <div class="au-picker-buttons">
-        <a class="au-btn au-btn-primary" href="vendeurs-churn.html" data-survey-link>Enquête vendeurs — relance</a>
-        <a class="au-btn au-btn-gold" href="acheteurs-churn.html" data-survey-link>Enquête acheteurs — relance</a>
-      </div>
+    <div class="au-hub-section-title">Tester les questionnaires</div>
+    <p class="au-hub-lead" style="margin-bottom:14px;">
+      Les boutons ci-dessous ouvrent les formulaires en <strong>mode test</strong> : un bandeau
+      l'indique, vous pouvez soumettre autant de fois que nécessaire, et vos réponses sont
+      marquées « test » — jamais comptées dans les résultats. La langue se change en haut de
+      chaque formulaire (FR/NL), et un menu latéral permet de passer d'un questionnaire à l'autre.
+    </p>
+    <div class="au-hub-links">
+      <a class="au-btn au-btn-primary" href="vendeurs.html?test=1">Vendeurs</a>
+      <a class="au-btn au-btn-gold" href="acheteurs.html?test=1">Acheteurs</a>
+      <a class="au-btn au-btn-primary" href="vendeurs-churn.html?test=1">Vendeurs — relance</a>
+      <a class="au-btn au-btn-gold" href="acheteurs-churn.html?test=1">Acheteurs — relance</a>
+    </div>
+
+    <div class="au-hub-section-title">Suivi des résultats</div>
+    <p class="au-hub-lead" style="margin-bottom:14px;">
+      Le dashboard (protégé par mot de passe) montre NPS, satisfaction, effort, freins et
+      verbatims, par type d'enquête et par audience. Les soumissions faites en mode test en
+      sont automatiquement exclues.
+    </p>
+    <div class="au-hub-links">
+      <a class="au-btn au-btn-ghost" href="dashboard.html" style="text-decoration:none; display:inline-flex; align-items:center;">Ouvrir le dashboard</a>
     </div>
   </main>
 </div>
@@ -58,30 +106,22 @@
     target = "acheteurs.html";
   }
 
-  // Preserve all other query params (lang, utm_source, test, etc.)
-  params.delete("type");
-  var qs = params.toString();
-
   if (target) {
+    // Mailchimp generic links: redirect, preserving lang/utm_source/test.
+    params.delete("type");
+    var qs = params.toString();
     window.location.replace(target + (qs ? "?" + qs : ""));
     return;
   }
 
-  // Picker mode: carry the current params onto each survey link, so a
-  // single URL like /?test=1 opens every form in the right mode.
-  document.querySelectorAll("[data-survey-link]").forEach(function (a) {
-    if (qs) a.href = a.getAttribute("href") + "?" + qs;
-  });
-
-  if (params.get("test") === "1") {
-    var banner = document.createElement("div");
-    banner.className = "au-test-banner";
-    banner.textContent = "🧪 Mode test — les liens ci-dessous ouvrent les formulaires en mode test : réponses non comptabilisées, soumissions multiples autorisées. / Testmodus — antwoorden worden niet meegeteld.";
-    var pageEl = document.querySelector(".au-page");
-    pageEl.insertBefore(banner, pageEl.firstChild);
+  // Internal hub — survey links always open in test mode; carry lang along.
+  var lang = params.get("lang");
+  if (lang) {
+    document.querySelectorAll(".au-hub-links a[href*='test=1']").forEach(function (a) {
+      a.href = a.getAttribute("href") + "&lang=" + encodeURIComponent(lang);
+    });
   }
-
-  document.getElementById("fallback-view").style.display = "flex";
+  document.getElementById("hub-view").style.display = "block";
 })();
 </script>
 <script src="assets/test-nav.js"></script>
